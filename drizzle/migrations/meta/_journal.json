@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1775046520390,
+      "tag": "20260405153124_create_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1743500000000,
+      "tag": "20260407114216_session_players_nickname",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775643777811,
+      "tag": "20260408102257_rate_limiting",
+      "breakpoints": true
+    }
+  ]
+}

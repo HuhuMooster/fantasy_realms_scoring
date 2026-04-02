@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    networks:
+      - fantasy_realms_net
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fantasy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fantasy_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-fantasy_realms}
+    volumes:
+      - pgdata:/var/lib/postgresql/data:cached
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-fantasy} -d ${POSTGRES_DB:-fantasy_realms}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrator:
+    build:
+      context: .
+      target: migrator
+    restart: 'no'
+    networks:
+      - fantasy_realms_net
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fantasy}:${POSTGRES_PASSWORD:-fantasy_pass}@db:5432/${POSTGRES_DB:-fantasy_realms}
+      JWT_SECRET: ${JWT_SECRET:-changethislongjwtsecret123}
+      NODE_ENV: production
+      ADMIN_USERNAME: ${ADMIN_USERNAME-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD-changeme123}
+      INITIAL_INVITE_CODE: ${INITIAL_INVITE_CODE-AAAABBBB}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    networks:
+      - fantasy_realms_net
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fantasy}:${POSTGRES_PASSWORD:-fantasy_pass}@db:5432/${POSTGRES_DB:-fantasy_realms}
+      JWT_SECRET: ${JWT_SECRET:-changethislongjwtsecret123}
+      PORT: ${PORT:-3002}
+      ADMIN_USERNAME: ${ADMIN_USERNAME-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD-changeme123}
+      INITIAL_INVITE_CODE: ${INITIAL_INVITE_CODE-AAAABBBB}
+      NODE_ENV: production
+    ports:
+      - 3002:3002
+    depends_on:
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+
+networks:
+  fantasy_realms_net:
+    name: fantasy_realms_net

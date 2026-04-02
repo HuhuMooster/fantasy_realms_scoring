@@ -1,0 +1,15 @@
+# Exclude everything
+
+*
+
+# Include only specific files and folders
+
+!src
+!public
+!package.json
+!pnpm-lock.yaml
+!tsconfig.json
+!drizzle.config.ts
+!vite.config.ts
+!components.json
+!drizzle
