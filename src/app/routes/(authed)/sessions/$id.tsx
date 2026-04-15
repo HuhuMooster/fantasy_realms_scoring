@@ -33,7 +33,11 @@ function SessionDetailPage() {
 
   const deleteMutation = useMutation({
     ...deleteSessionMutationOptions(),
-    onSuccess: () => router.navigate({ to: '/sessions' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionQueryOptions(id).queryKey })
+      queryClient.invalidateQueries({ queryKey: sessionsQueryOptions().queryKey })
+      router.navigate({ to: '/sessions' })
+    },
   })
 
   const completeMutation = useMutation({
