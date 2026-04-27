@@ -1,5 +1,5 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
 
 import { ScoreBreakdown } from '@/components/calculator/score-breakdown'
@@ -8,7 +8,11 @@ import { PlayerHandForm } from '@/components/sessions/player-hand-form'
 import type { TActionConfig } from '@/lib/calculator/actions'
 import { cardsQueryOptions } from '@/lib/cards/queries'
 import type { TScoreResult } from '@/lib/scoring/types'
-import { sessionQueryOptions } from '@/lib/sessions/queries'
+import {
+  completeSessionMutationOptions,
+  sessionQueryOptions,
+  sessionsQueryOptions,
+} from '@/lib/sessions/queries'
 import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/(authed)/sessions/$id/edit')({
@@ -27,11 +31,25 @@ export const Route = createFileRoute('/(authed)/sessions/$id/edit')({
 
 function EditSessionPage() {
   const { id } = Route.useParams()
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const [activeIdx, setActiveIdx] = useState(0)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [stableResult, setStableResult] = useState<TScoreResult | undefined>(undefined)
 
   const { data: session } = useSuspenseQuery(sessionQueryOptions(id))
+
+  const allHandsSaved =
+    session.players.length > 0 && session.players.every((p) => p.finalScore !== null)
+
+  const completeMutation = useMutation({
+    ...completeSessionMutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionQueryOptions(id).queryKey })
+      queryClient.invalidateQueries({ queryKey: sessionsQueryOptions().queryKey })
+      router.navigate({ to: '/sessions/$id', params: { id } })
+    },
+  })
 
   const [handsByPlayerId, setHandsByPlayerId] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(session.players.map((p) => [p.id, p.cardIds]))
@@ -60,6 +78,7 @@ function EditSessionPage() {
     <div className="p-4 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-2">
         <Link to="/sessions/$id" params={{ id }} className="btn btn-ghost btn-sm">
+          {'<- '}
           {session.name}
         </Link>
 
@@ -73,6 +92,20 @@ function EditSessionPage() {
           </button>
         )}
       </div>
+
+      {allHandsSaved && session.status === 'IN_PROGRESS' && (
+        <button
+          type="button"
+          className="btn btn-success w-full mb-4"
+          onClick={() => completeMutation.mutate({ data: { id } })}
+          disabled={completeMutation.isPending}
+        >
+          {completeMutation.isPending && (
+            <span className="loading loading-spinner loading-sm" />
+          )}
+          {'Mark as completed'}
+        </button>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section>

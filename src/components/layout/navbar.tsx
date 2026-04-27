@@ -48,20 +48,22 @@ export function Navbar({ user }: INavbarProps) {
       {/* Desktop nav links */}
 
       <div className="hidden sm:flex items-center gap-1 mr-2">
-        {user && (
+        {NAV_ITEMS.map(({ to, label, requiresAuth }) => (
           <>
-            {NAV_ITEMS.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                className="btn btn-ghost btn-sm"
-                activeProps={{ className: 'btn btn-info btn-sm' }}
-              >
-                {label}
-              </Link>
-            ))}
+            {requiresAuth
+              ? user && (
+                  <Link
+                    key={to}
+                    to={to}
+                    className="btn btn-ghost btn-sm"
+                    activeProps={{ className: 'btn btn-info btn-sm' }}
+                  >
+                    {label}
+                  </Link>
+                )
+              : null}
           </>
-        )}
+        ))}
         <>
           {user?.role === 'ADMIN' && (
             <Link

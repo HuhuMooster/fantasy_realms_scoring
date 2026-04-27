@@ -25,20 +25,22 @@ export function DrawerMenu({ user }: { user: IJWTPayload | null }) {
       </div>
 
       <ul className="menu p-0 gap-0.5 flex-1 text-base">
-        {user && (
+        {NAV_ITEMS.map(({ to, label, requiresAuth }) => (
           <>
-            {NAV_ITEMS.map(({ to, label }) => (
-              <li key={to}>
-                <Link
-                  to={to}
-                  activeProps={{ className: 'active text-primary font-medium' }}
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
+            {requiresAuth
+              ? user && (
+                  <Link
+                    key={to}
+                    to={to}
+                    className="btn btn-ghost btn-sm"
+                    activeProps={{ className: 'btn btn-info btn-sm' }}
+                  >
+                    {label}
+                  </Link>
+                )
+              : null}
           </>
-        )}
+        ))}
         {user?.role === 'ADMIN' && (
           <>
             <li className="menu-title mt-4 text-xs">{'Admin'}</li>

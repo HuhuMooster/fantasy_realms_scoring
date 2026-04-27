@@ -45,9 +45,8 @@ export const calculateScore = createServerFn({ method: 'POST' })
 export const getCardById = createServerFn({ method: 'GET' })
   .inputValidator(z.object({ id: z.string() }))
   .handler(async ({ data }) => {
-    const rows = await db.select().from(cards).where(eq(cards.id, data.id))
-    if (!rows) throw new Error('Card not found')
-    const row = rows[0]
+    const [row] = await db.select().from(cards).where(eq(cards.id, data.id))
+    if (!row) throw new Error('Card not found')
 
     return { ...row, bonusRule: row.bonusRule as object }
   })

@@ -9,7 +9,7 @@ import { authQueryOptions } from '@/lib/auth/queries'
 
 export const Route = createFileRoute('/(authed)')({
   beforeLoad: async ({ context, location }) => {
-    const publicPaths = ['/login', '/register', '/calculator']
+    const publicPaths = ['/login', '/register', '/calculator', '/cards']
     if (publicPaths.includes(location.pathname)) return
 
     const user = await context.queryClient.ensureQueryData(authQueryOptions())

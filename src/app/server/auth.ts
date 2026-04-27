@@ -57,7 +57,7 @@ export const register = createServerFn({ method: 'POST' })
     if (!invite) throw new Error('Invalid or already used invite code')
 
     // Check username taken
-    const existing = await db
+    const [existing] = await db
       .select()
       .from(users)
       .where(eq(users.username, data.username))
