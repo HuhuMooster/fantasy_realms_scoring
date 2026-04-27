@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { Fragment } from 'react'
 
 import { NAV_ITEMS } from '@/components/layout/navItems'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
@@ -40,7 +41,7 @@ export function Navbar({ user }: INavbarProps) {
       </div>
 
       <div className="flex-1">
-        <Link to="/" className="text-md font-bold tracking-tight">
+        <Link key={'/'} to="/" className="text-md font-bold tracking-tight">
           {'Fantasy Realms'}
         </Link>
       </div>
@@ -49,7 +50,7 @@ export function Navbar({ user }: INavbarProps) {
 
       <div className="hidden sm:flex items-center gap-1 mr-2">
         {NAV_ITEMS.map(({ to, label, requiresAuth }) => (
-          <>
+          <Fragment key={to}>
             {(requiresAuth && user) || !requiresAuth ? (
               <Link
                 key={to}
@@ -60,11 +61,12 @@ export function Navbar({ user }: INavbarProps) {
                 {label}
               </Link>
             ) : null}
-          </>
+          </Fragment>
         ))}
         <>
           {user?.role === 'ADMIN' && (
             <Link
+              key="/admin/users"
               to="/admin/users"
               className="btn btn-ghost btn-sm"
               activeProps={{ className: 'btn btn-info btn-sm' }}

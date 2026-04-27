@@ -104,6 +104,16 @@ function SessionDetailPage() {
           </Link>
         )}
 
+        {session.status === 'COMPLETED' && (
+          <Link
+            to="/sessions/new"
+            search={{ n: session.players.map((p) => p.nickname) }}
+            className="btn btn-outline w-full"
+          >
+            {'Rematch'}
+          </Link>
+        )}
+
         {session.status === 'IN_PROGRESS' && allHandsSaved && (
           <button
             type="button"

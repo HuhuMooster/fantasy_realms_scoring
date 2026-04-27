@@ -10,7 +10,11 @@ import { createSessionMutationOptions } from '@/lib/sessions/queries'
 import { cn } from '@/lib/utils'
 import { createSessionFormSchema } from '@/lib/validators'
 
-export function SessionForm() {
+interface ISessionFormProps {
+  initialNicknames?: string[]
+}
+
+export function SessionForm({ initialNicknames }: ISessionFormProps) {
   const router = useRouter()
   const { data: editions } = useSuspenseQuery(editionsQueryOptions())
 
@@ -22,11 +26,13 @@ export function SessionForm() {
       router.navigate({ to: '/sessions/$id/edit', params: { id: result.id } }),
   })
 
+  const defaultNicknames = initialNicknames?.length ? initialNicknames : ['', '']
+
   const form = useForm({
     defaultValues: {
       name: '',
       editionIds: baseEdition?.id ? [baseEdition.id] : ([] as string[]),
-      nicknames: ['', ''],
+      nicknames: defaultNicknames,
     },
     validators: { onSubmit: createSessionFormSchema },
     onSubmit: async ({ value }) => {

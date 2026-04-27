@@ -1,5 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router'
-import { useLayoutEffect } from 'react'
+import { Fragment, useLayoutEffect } from 'react'
 
 import { NAV_ITEMS } from '@/components/layout/navItems'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
@@ -26,7 +26,7 @@ export function DrawerMenu({ user }: { user: IJWTPayload | null }) {
 
       <ul className="menu p-0 gap-0.5 flex-1 text-base">
         {NAV_ITEMS.map(({ to, label, requiresAuth }) => (
-          <>
+          <Fragment key={to}>
             {(requiresAuth && user) || !requiresAuth ? (
               <Link
                 key={to}
@@ -37,7 +37,7 @@ export function DrawerMenu({ user }: { user: IJWTPayload | null }) {
                 {label}
               </Link>
             ) : null}
-          </>
+          </Fragment>
         ))}
         {user?.role === 'ADMIN' && (
           <>

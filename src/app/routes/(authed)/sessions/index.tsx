@@ -35,7 +35,7 @@ function SessionsPage() {
       {sessions.length > 0 && (
         <div className="flex flex-col gap-3">
           {sessions.map((s) => (
-            <SessionCard {...s} />
+            <SessionCard key={s.id} {...s} />
           ))}
         </div>
       )}

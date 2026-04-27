@@ -1824,19 +1824,18 @@ describe('MULTI_SUIT_COUNT_EQ condition', () => {
 })
 
 describe('Fixed-point blanking chain', () => {
-  it('Blizzard blanks Swamp then Warship self-blanks', () => {
-    // Blizzard blanks flood (Swamp). Warship: BLANK_SELF if NOT HAS_SUIT flood.
-    // After Swamp blanked, no flood remains -> Warship self-blanks.
-    const result = scoreHand([blizzard(), swamp(), warship()])
-    expect(blanked(result, 'Swamp')).toBe(true)
-    expect(blanked(result, 'Warship')).toBe(true)
+  it('Rainstorm blanks Forge then Smoke self-blanks', () => {
+    // Rainstorm blanks all flames. Forge blanked -> no flame remains -> Smoke self-blanks.
+    const result = scoreHand([rainstorm(), forge(), smoke()])
+    expect(blanked(result, 'Forge')).toBe(true)
+    expect(blanked(result, 'Smoke')).toBe(true)
   })
 
-  it('chain stops when another flood card keeps Warship active', () => {
-    // Blizzard blanks Swamp, but Island(flood) remains -> Warship active
-    const result = scoreHand([blizzard(), swamp(), island(), warship()])
-    expect(blanked(result, 'Swamp')).toBe(true)
-    expect(blanked(result, 'Warship')).toBe(false)
+  it('chain stops when another flame card keeps Smoke active', () => {
+    // Rainstorm blanks Forge but not Lightning (exception). Lightning keeps Smoke active.
+    const result = scoreHand([rainstorm(), forge(), lightning(), smoke()])
+    expect(blanked(result, 'Forge')).toBe(true)
+    expect(blanked(result, 'Smoke')).toBe(false)
   })
 })
 

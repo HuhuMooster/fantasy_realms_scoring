@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 
 import { cn, formatDate } from '@/lib/utils'
 import type { IPlayer } from '@/types/players'
@@ -12,6 +12,7 @@ interface ISessionCardProps {
 }
 
 export function SessionCard({ id, name, date, status, players }: ISessionCardProps) {
+  const navigate = useNavigate()
   const dateStr = formatDate(date)
 
   const leader =
@@ -39,14 +40,32 @@ export function SessionCard({ id, name, date, status, players }: ISessionCardPro
             <span className="text-sm text-base-content/70">
               {players.length} {players.length === 1 ? 'player' : 'players'}
             </span>
-            {leader && (
-              <span className="text-sm font-medium text-primary">
-                {leader.nickname}
-                {': '}
-                {leader.finalScore}
-                {' pts'}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {leader && (
+                <span className="text-sm font-medium text-primary">
+                  {leader.nickname}
+                  {': '}
+                  {leader.finalScore}
+                  {' pts'}
+                </span>
+              )}
+              {status === 'COMPLETED' && (
+                <button
+                  type="button"
+                  className="btn btn-xs btn-secondary"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    navigate({
+                      to: '/sessions/new',
+                      search: { n: players.map((p) => p.nickname) },
+                    })
+                  }}
+                >
+                  {'Rematch'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
