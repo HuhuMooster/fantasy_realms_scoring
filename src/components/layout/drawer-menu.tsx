@@ -27,18 +27,16 @@ export function DrawerMenu({ user }: { user: IJWTPayload | null }) {
       <ul className="menu p-0 gap-0.5 flex-1 text-base">
         {NAV_ITEMS.map(({ to, label, requiresAuth }) => (
           <>
-            {requiresAuth
-              ? user && (
-                  <Link
-                    key={to}
-                    to={to}
-                    className="btn btn-ghost btn-sm"
-                    activeProps={{ className: 'btn btn-info btn-sm' }}
-                  >
-                    {label}
-                  </Link>
-                )
-              : null}
+            {(requiresAuth && user) || !requiresAuth ? (
+              <Link
+                key={to}
+                to={to}
+                className="btn btn-ghost btn-sm"
+                activeProps={{ className: 'btn btn-info btn-sm' }}
+              >
+                {label}
+              </Link>
+            ) : null}
           </>
         ))}
         {user?.role === 'ADMIN' && (
@@ -57,14 +55,24 @@ export function DrawerMenu({ user }: { user: IJWTPayload | null }) {
       </ul>
       <div className="flex flex-col mt-auto gap-4 w-2/6">
         {!user && (
-          <Link
-            key="/login"
-            to="/login"
-            className="btn btn-primary btn-sm"
-            activeProps={{ className: 'btn btn-accent btn-sm btn-active' }}
-          >
-            {'Login'}
-          </Link>
+          <>
+            <Link
+              key="/login"
+              to="/login"
+              className="btn btn-primary btn-sm"
+              activeProps={{ className: 'btn btn-accent btn-sm btn-active' }}
+            >
+              {'Login'}
+            </Link>
+            <Link
+              key="/register"
+              to="/register"
+              className="btn btn-primary btn-sm"
+              activeProps={{ className: 'btn btn-accent btn-sm btn-active' }}
+            >
+              {'Register'}
+            </Link>
+          </>
         )}
         {user && (
           <Button

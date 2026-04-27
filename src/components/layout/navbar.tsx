@@ -50,18 +50,16 @@ export function Navbar({ user }: INavbarProps) {
       <div className="hidden sm:flex items-center gap-1 mr-2">
         {NAV_ITEMS.map(({ to, label, requiresAuth }) => (
           <>
-            {requiresAuth
-              ? user && (
-                  <Link
-                    key={to}
-                    to={to}
-                    className="btn btn-ghost btn-sm"
-                    activeProps={{ className: 'btn btn-info btn-sm' }}
-                  >
-                    {label}
-                  </Link>
-                )
-              : null}
+            {(requiresAuth && user) || !requiresAuth ? (
+              <Link
+                key={to}
+                to={to}
+                className="btn btn-ghost btn-sm"
+                activeProps={{ className: 'btn btn-info btn-sm' }}
+              >
+                {label}
+              </Link>
+            ) : null}
           </>
         ))}
         <>
@@ -77,14 +75,24 @@ export function Navbar({ user }: INavbarProps) {
         </>
         <>
           {!user && (
-            <Link
-              key="/login"
-              to="/login"
-              className="btn btn-primary btn-sm"
-              activeProps={{ className: 'btn btn-accent btn-sm btn-active' }}
-            >
-              {'Login'}
-            </Link>
+            <>
+              <Link
+                key="/login"
+                to="/login"
+                className="btn btn-primary btn-sm"
+                activeProps={{ className: 'btn btn-accent btn-sm btn-active' }}
+              >
+                {'Login'}
+              </Link>
+              <Link
+                key="/register"
+                to="/register"
+                className="btn btn-primary btn-sm"
+                activeProps={{ className: 'btn btn-accent btn-sm btn-active' }}
+              >
+                {'Register'}
+              </Link>
+            </>
           )}
         </>
       </div>
