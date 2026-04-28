@@ -644,6 +644,60 @@ function demon() {
     { condition: { type: 'ALWAYS' }, effects: [{ type: 'BLANK_DEMON' }] },
   ])
 }
+function bellTower() {
+  return card('Bell Tower', 'land', 8, [
+    {
+      condition: { type: 'HAS_SUIT', suit: 'wizard' },
+      effects: [{ type: 'BONUS_FLAT', amount: 15 }],
+    },
+  ])
+}
+function darkQueen() {
+  return card('Dark Queen', 'undead', 10, [])
+}
+function ghoul() {
+  return card('Ghoul', 'undead', 8, [])
+}
+function angel() {
+  return card('Angel', 'outsider', 16, [])
+}
+function leprechaun() {
+  return card('Leprechaun', 'outsider', 20, [])
+}
+function castle() {
+  return card('Castle', 'building', 10, [
+    {
+      condition: { type: 'HAS_SUIT', suit: 'leader' },
+      effects: [{ type: 'BONUS_FLAT', amount: 10 }],
+    },
+    {
+      condition: { type: 'HAS_SUIT', suit: 'army' },
+      effects: [{ type: 'BONUS_FLAT', amount: 10 }],
+    },
+    {
+      condition: { type: 'HAS_SUIT', suit: 'land' },
+      effects: [{ type: 'BONUS_FLAT', amount: 10 }],
+    },
+    {
+      condition: { type: 'SUIT_COUNT_GTE', suit: 'building', n: 2 },
+      effects: [
+        { type: 'BONUS_FLAT', amount: 5 },
+        { type: 'BONUS_PER', suit: 'building', amount: 5 },
+      ],
+    },
+  ])
+}
+function crypt() {
+  return card('Crypt', 'building', 21, [
+    {
+      condition: { type: 'ALWAYS' },
+      effects: [
+        { type: 'BONUS_SUM_SUIT_STRENGTH', suit: 'undead' },
+        { type: 'BLANK_SUIT', suit: 'leader' },
+      ],
+    },
+  ])
+}
 
 function net(result: ReturnType<typeof scoreHand>, name: string) {
   return result.perCard.find((c) => c.name === name)?.net ?? 0
@@ -946,26 +1000,20 @@ describe('Rangers army clearing', () => {
 
 describe('Gem of Order', () => {
   it('no run: no bonus', () => {
-    const result = scoreHand([gemOfOrder(), card('X', 'army', 1), card('Y', 'army', 3)])
-    // strengths: 5,1,3 -> sorted: 1,3,5 -> no consecutive run of 3
+    // Protection Rune=1, Elven Longbow=3, Gem of Order=5 -> sorted: 1,3,5 -> no run of 3
+    const result = scoreHand([gemOfOrder(), protectionRune(), elvenLongbow()])
     expect(net(result, 'Gem of Order')).toBe(5)
   })
 
   it('3-run: +10', () => {
-    // strengths: 3,4,5,7 -> 3-run: 3,4,5
-    const result = scoreHand([gemOfOrder(), card('A', 'army', 3), card('B', 'army', 4)])
-    // strengths: 5(gem), 3, 4 -> sorted: 3,4,5 -> run of 3 -> +10
+    // Elven Longbow=3, Shield of Keth=4, Gem of Order=5 -> sorted: 3,4,5 -> run of 3
+    const result = scoreHand([gemOfOrder(), elvenLongbow(), shieldOfKeth()])
     expect(net(result, 'Gem of Order')).toBe(15)
   })
 
   it('4-run: +30', () => {
-    const result = scoreHand([
-      gemOfOrder(),
-      card('A', 'army', 3),
-      card('B', 'army', 4),
-      card('C', 'army', 6),
-    ])
-    // strengths: 5,3,4,6 -> sorted: 3,4,5,6 -> run of 4 -> +30
+    // Elven Longbow=3, Shield of Keth=4, Gem of Order=5, Cavern=6 -> sorted: 3,4,5,6 -> run of 4
+    const result = scoreHand([gemOfOrder(), elvenLongbow(), shieldOfKeth(), cavern()])
     expect(net(result, 'Gem of Order')).toBe(35)
   })
 })
@@ -1004,8 +1052,7 @@ describe('Lich undead protection', () => {
   })
 
   it('Lich: +10 per other undead', () => {
-    const darkQueen = card('Dark Queen', 'undead', 10, [])
-    const result = scoreHand([lich(), darkQueen])
+    const result = scoreHand([lich(), darkQueen()])
     // Lich: 13 + 10*1 (other undead) = 23
     expect(net(result, 'Lich')).toBe(23)
   })
@@ -1140,53 +1187,43 @@ describe('Jester', () => {
   })
 
   it('all cards odd -> +50', () => {
-    const result = scoreHand([jester(), card('A', 'army', 1), card('B', 'army', 5)])
-    // powers: 3,1,5 - all odd -> +50
+    // Protection Rune=1 (odd), Jester=3 (odd), Mountain=9 (odd) -> all odd -> +50
+    const result = scoreHand([jester(), protectionRune(), mountain()])
     expect(net(result, 'Jester')).toBe(53)
   })
 
   it('one even card -> 0 bonus', () => {
-    const result = scoreHand([jester(), card('A', 'army', 2)])
-    // oddCount=1 (jester=3), not all -> max(0,(1-1)*3)=0
+    // Jester=3 (odd), World Tree=2 (even) -> not all odd -> (1-1)*3=0
+    const result = scoreHand([jester(), worldTree()])
     expect(net(result, 'Jester')).toBe(3)
   })
 
   it('2 odd + 2 even -> (2-1)*3 = 3 bonus', () => {
-    const result = scoreHand([
-      jester(),
-      card('A', 'army', 1),
-      card('B', 'army', 2),
-      card('C', 'army', 4),
-    ])
-    // oddCount=2 (jester=3, A=1), not all -> (2-1)*3=3
+    // Jester=3 (odd), Protection Rune=1 (odd), World Tree=2 (even), Shield of Keth=4 (even)
+    const result = scoreHand([jester(), protectionRune(), worldTree(), shieldOfKeth()])
+    // oddCount=2 -> (2-1)*3=3
     expect(net(result, 'Jester')).toBe(6)
   })
 
   it('jester is only odd card among even cards -> 0 bonus', () => {
-    const result = scoreHand([
-      jester(),
-      card('A', 'army', 2),
-      card('B', 'army', 4),
-      card('C', 'army', 6),
-    ])
-    // oddCount=1 (jester=3) -> (1-1)*3=0
+    // Jester=3 (odd), World Tree=2, Shield of Keth=4, Cavern=6 -> all even except jester
+    const result = scoreHand([jester(), worldTree(), shieldOfKeth(), cavern()])
+    // oddCount=1 -> (1-1)*3=0
     expect(net(result, 'Jester')).toBe(3)
   })
 })
 
 describe('Candle', () => {
   it('+100 with Book of Changes + Bell Tower + wizard', () => {
-    const bookOfChanges = card('Book of Changes', 'artifact', 3, [])
-    const bellTower = card('Bell Tower', 'artifact', 3, [])
-    const result = scoreHand([candle(), bookOfChanges, bellTower, collector()])
+    const boc = card('Book of Changes', 'artifact', 3, [])
+    const result = scoreHand([candle(), boc, bellTower(), collector()])
     // candle: 2 + 100 = 102
     expect(net(result, 'Candle')).toBe(102)
   })
 
   it('no bonus without wizard in hand', () => {
-    const bookOfChanges = card('Book of Changes', 'artifact', 3, [])
-    const bellTower = card('Bell Tower', 'artifact', 3, [])
-    const result = scoreHand([candle(), bookOfChanges, bellTower])
+    const boc = card('Book of Changes', 'artifact', 3, [])
+    const result = scoreHand([candle(), boc, bellTower()])
     // condition: HAS_SUIT wizard -> false -> no bonus
     expect(net(result, 'Candle')).toBe(2)
   })
@@ -1194,37 +1231,40 @@ describe('Candle', () => {
 
 describe('Collector bonuses', () => {
   it('4 cards of same suit -> +40', () => {
+    // mountain, forest, earthElemental, cavern = 4 land cards
     const result = scoreHand([
       collector(),
-      card('A', 'land', 1),
-      card('B', 'land', 2),
-      card('C', 'land', 3),
-      card('D', 'land', 4),
+      mountain(),
+      forest(),
+      earthElemental(),
+      cavern(),
     ])
     expect(result.perCard.find((c) => c.name === 'Collector')!.bonus).toBe(40)
   })
 
   it('5 cards of same suit -> +100', () => {
+    // mountain, forest, earthElemental, cavern, bellTower = 5 land cards
     const result = scoreHand([
       collector(),
-      card('A', 'land', 1),
-      card('B', 'land', 2),
-      card('C', 'land', 3),
-      card('D', 'land', 4),
-      card('E', 'land', 6),
+      mountain(),
+      forest(),
+      earthElemental(),
+      cavern(),
+      bellTower(),
     ])
     expect(result.perCard.find((c) => c.name === 'Collector')!.bonus).toBe(100)
   })
 
   it('3 land + 3 flood -> +10 each = +20', () => {
+    // 3 land: mountain, cavern, bellTower; 3 flood: fountainOfLife, waterElemental, island
     const result = scoreHand([
       collector(),
-      card('A', 'land', 1),
-      card('B', 'land', 2),
-      card('C', 'land', 3),
-      card('D', 'flood', 4),
-      card('E', 'flood', 6),
-      card('F', 'flood', 8),
+      mountain(),
+      cavern(),
+      bellTower(),
+      fountainOfLife(),
+      waterElemental(),
+      island(),
     ])
     expect(result.perCard.find((c) => c.name === 'Collector')!.bonus).toBe(20)
   })
@@ -1232,58 +1272,55 @@ describe('Collector bonuses', () => {
 
 describe('Gem of Order extended runs', () => {
   it('5-run -> +60', () => {
+    // PR=1, WT=2, ELB=3, SoK=4, GoO=5 -> sorted 1,2,3,4,5 -> run of 5 -> +60
     const result = scoreHand([
       gemOfOrder(),
-      card('A', 'army', 1),
-      card('B', 'army', 2),
-      card('C', 'army', 3),
-      card('D', 'army', 4),
+      protectionRune(),
+      worldTree(),
+      elvenLongbow(),
+      shieldOfKeth(),
     ])
-    // powers: 5,1,2,3,4 -> sorted 1,2,3,4,5 -> run of 5 -> +60
     expect(net(result, 'Gem of Order')).toBe(65)
   })
 
   it('6-run -> +100', () => {
+    // PR=1, WT=2, ELB=3, SoK=4, GoO=5, Cavern=6 -> sorted 1,2,3,4,5,6 -> run of 6 -> +100
     const result = scoreHand([
       gemOfOrder(),
-      card('A', 'army', 1),
-      card('B', 'army', 2),
-      card('C', 'army', 3),
-      card('D', 'army', 4),
-      card('E', 'army', 6),
+      protectionRune(),
+      worldTree(),
+      elvenLongbow(),
+      shieldOfKeth(),
+      cavern(),
     ])
-    // powers: 5,1,2,3,4,6 -> sorted 1,2,3,4,5,6 -> run of 6 -> +100
     expect(net(result, 'Gem of Order')).toBe(105)
   })
 
   it('two separate 3-runs -> +20', () => {
+    // ELB=3, SoK=4, GoO=5 -> first run; King=8, Mountain=9, Elven Archers=10 -> second run
     const result = scoreHand([
       gemOfOrder(),
-      card('A', 'army', 3),
-      card('B', 'army', 4),
-      card('C', 'army', 8),
-      card('D', 'army', 9),
-      card('E', 'army', 10),
+      elvenLongbow(),
+      shieldOfKeth(),
+      king(),
+      mountain(),
+      elvenArchers(),
     ])
-    // powers: 5,3,4,8,9,10 -> sorted 3,4,5,8,9,10 -> run [3,4,5] +10, then [8,9,10] +10 -> +20
+    // powers: 5,3,4,8,9,10 -> sorted 3,4,5,8,9,10 -> runs [3,4,5] +10, [8,9,10] +10 -> +20
     expect(net(result, 'Gem of Order')).toBe(25)
   })
 })
 
 describe('Forest beast bonus', () => {
   it('+12 per beast card', () => {
-    const result = scoreHand([forest(), card('A', 'beast', 5), card('B', 'beast', 3)])
+    // warhorse and unicorn are both beast suit
+    const result = scoreHand([forest(), warhorse(), unicorn()])
     // Forest: 7 + 2*12 = 31
     expect(net(result, 'Forest')).toBe(31)
   })
 
   it('+12 bonus for Elven Archers presence', () => {
-    const result = scoreHand([
-      forest(),
-      card('A', 'beast', 5),
-      card('B', 'beast', 3),
-      elvenArchers(),
-    ])
+    const result = scoreHand([forest(), warhorse(), unicorn(), elvenArchers()])
     // Forest: 7 + 2*12 (beasts) + 12 (Elven Archers) = 43
     expect(net(result, 'Forest')).toBe(43)
   })
@@ -1297,12 +1334,7 @@ describe('Light Cavalry', () => {
   })
 
   it('-2 per land card (3 land)', () => {
-    const result = scoreHand([
-      lightCavalry(),
-      mountain(),
-      forest(),
-      card('A', 'land', 3),
-    ])
+    const result = scoreHand([lightCavalry(), mountain(), forest(), cavern()])
     // LC: 17 - 3*2 = 11
     expect(net(result, 'Light Cavalry')).toBe(11)
   })
@@ -1383,20 +1415,20 @@ describe('War Dirigible', () => {
 
 describe('Swamp penalties', () => {
   it('-3 per flame card', () => {
-    const result = scoreHand([swamp(), card('A', 'flame', 3), card('B', 'flame', 5)])
+    // forge and lightning are both flame suit
+    const result = scoreHand([swamp(), forge(), lightning()])
     // Swamp: 18 - 2*3 = 12
     expect(net(result, 'Swamp')).toBe(12)
   })
 
   it('-3 per army card when no Rangers or Warship', () => {
-    const result = scoreHand([swamp(), card('A', 'army', 5)])
+    const result = scoreHand([swamp(), knights()])
     // Swamp: 18 - 1*3 = 15
     expect(net(result, 'Swamp')).toBe(15)
   })
 
   it('Warship suppresses army penalty', () => {
-    const result = scoreHand([swamp(), card('A', 'army', 5), warship()])
-    // Warship: NOT HAS_SUIT flood -> flood present (Swamp) -> condition false -> Warship active
+    const result = scoreHand([swamp(), knights(), warship()])
     // Swamp army penalty condition: NOT(Rangers OR Warship) -> Warship in hand -> false -> no penalty
     expect(net(result, 'Swamp')).toBe(18)
   })
@@ -1404,24 +1436,16 @@ describe('Swamp penalties', () => {
 
 describe('Enchantress', () => {
   it('+5 per card of each element suit', () => {
-    const result = scoreHand([
-      enchantress(),
-      card('L', 'land', 5),
-      card('W', 'weather', 3),
-      card('Fl', 'flood', 7),
-      card('Fm', 'flame', 9),
-    ])
-    // 5 + 5(land) + 5(weather) + 5(flood) + 5(flame) = 25
-    expect(net(result, 'Enchantress')).toBe(25)
+    // mountain=land, blizzard=weather, island=flood, forge=flame
+    // Note: using blizzard not rainstorm (rainstorm would blank forge)
+    const result = scoreHand([enchantress(), mountain(), blizzard(), island(), forge()])
+    // 5 + 5(land) + 5(weather) + 0(flood)(blanked by blizzard) + 5(flame) = 25
+    expect(net(result, 'Enchantress')).toBe(20)
   })
 
   it('+5 per flood card (multiple)', () => {
-    const result = scoreHand([
-      enchantress(),
-      card('A', 'flood', 5),
-      card('B', 'flood', 7),
-    ])
-    // 5 + 0 + 0 + 2*5(flood) + 0 = 15
+    const result = scoreHand([enchantress(), fountainOfLife(), island()])
+    // 5 + 2*5(flood) = 15
     expect(net(result, 'Enchantress')).toBe(15)
   })
 })
@@ -1459,22 +1483,15 @@ describe('Warlord does not count blanked army', () => {
 
 describe('Blizzard detailed penalties', () => {
   it('-5 per beast and -5 per flame', () => {
-    const result = scoreHand([
-      blizzard(),
-      card('A', 'beast', 3),
-      card('B', 'beast', 7),
-      card('C', 'flame', 9),
-    ])
+    // warhorse and unicorn are beast suit; forge is flame
+    const result = scoreHand([blizzard(), warhorse(), unicorn(), forge()])
     // Blizzard: 30 - 2*5(beast) - 1*5(flame) = 15
     expect(net(result, 'Blizzard')).toBe(15)
   })
 
   it('-5 per leader', () => {
-    const result = scoreHand([
-      blizzard(),
-      card('A', 'leader', 5),
-      card('B', 'leader', 8),
-    ])
+    // king and queen are both leader suit
+    const result = scoreHand([blizzard(), king(), queen()])
     // Blizzard: 30 - 2*5(leader) = 20
     expect(net(result, 'Blizzard')).toBe(20)
   })
@@ -1498,11 +1515,12 @@ describe('Empress with multiple leaders', () => {
 
 describe('Dwarvish Infantry with multiple army', () => {
   it('-2 per other army card (3 others)', () => {
+    // knights, lightCavalry, elvenArchers are all army suit
     const result = scoreHand([
       dwarvishInfantry(),
-      card('A', 'army', 5),
-      card('B', 'army', 6),
-      card('C', 'army', 7),
+      knights(),
+      lightCavalry(),
+      elvenArchers(),
     ])
     // DI: 15 - 3*2 = 9
     expect(net(result, 'Dwarvish Infantry')).toBe(9)
@@ -1570,34 +1588,19 @@ describe('HAS_CARD checks blanked cards', () => {
   })
 })
 
-describe('SUIT_COUNT_GTE condition', () => {
-  it('does not fire when suit count is below threshold', () => {
-    const c = card('Needs 3 Army', 'artifact', 10, [
-      {
-        condition: { type: 'SUIT_COUNT_GTE', suit: 'army', n: 3 },
-        effects: [{ type: 'BONUS_FLAT', amount: 30 }],
-      },
-    ])
-    const result = scoreHand([c, card('A', 'army', 1), card('B', 'army', 2)])
-    // 2 army < 3 -> no bonus
-    expect(net(result, 'Needs 3 Army')).toBe(10)
+describe('SUIT_COUNT_GTE condition (Castle)', () => {
+  it('does not fire when building count is 1 (below threshold of 2)', () => {
+    // Castle alone: SUIT_COUNT_GTE(building, n=2) -> 1 < 2 -> no bonus from that rule
+    const result = scoreHand([castle()])
+    // No leader/army/land/extra building -> net = base 10
+    expect(net(result, 'Castle')).toBe(10)
   })
 
-  it('fires when suit count meets threshold', () => {
-    const c = card('Needs 3 Army', 'artifact', 10, [
-      {
-        condition: { type: 'SUIT_COUNT_GTE', suit: 'army', n: 3 },
-        effects: [{ type: 'BONUS_FLAT', amount: 30 }],
-      },
-    ])
-    const result = scoreHand([
-      c,
-      card('A', 'army', 1),
-      card('B', 'army', 2),
-      card('C', 'army', 3),
-    ])
-    // 3 army >= 3 -> +30
-    expect(net(result, 'Needs 3 Army')).toBe(40)
+  it('fires when 2+ buildings present (threshold met)', () => {
+    // Castle + Crypt = 2 buildings >= 2 -> fires: +5 flat + BONUS_PER building (excl. self = 1*5)
+    const result = scoreHand([castle(), crypt()])
+    // castle: 10 + 5(flat) + 5*1(crypt) = 20
+    expect(net(result, 'Castle')).toBe(20)
   })
 })
 
@@ -1659,7 +1662,7 @@ describe('Elven Longbow', () => {
 
 describe('Warhorse', () => {
   it('no bonus without leader or wizard', () => {
-    const result = scoreHand([warhorse(), card('A', 'army', 5)])
+    const result = scoreHand([warhorse(), knights()])
     expect(net(result, 'Warhorse')).toBe(6)
   })
 
@@ -1682,22 +1685,15 @@ describe('Warhorse', () => {
 
 describe('Beastmaster beast bonus', () => {
   it('+9 per beast (2 beasts)', () => {
-    const result = scoreHand([
-      beastmaster(),
-      card('A', 'beast', 3),
-      card('B', 'beast', 5),
-    ])
+    // warhorse and unicorn are beast suit
+    const result = scoreHand([beastmaster(), warhorse(), unicorn()])
     // 9 + 2*9 = 27
     expect(net(result, 'Beastmaster')).toBe(27)
   })
 
   it('+9 per beast (3 beasts)', () => {
-    const result = scoreHand([
-      beastmaster(),
-      card('A', 'beast', 3),
-      card('B', 'beast', 5),
-      card('C', 'beast', 7),
-    ])
+    // warhorse, unicorn, hydra are beast suit
+    const result = scoreHand([beastmaster(), warhorse(), unicorn(), hydra()])
     // 9 + 3*9 = 36
     expect(net(result, 'Beastmaster')).toBe(36)
   })
@@ -1717,8 +1713,7 @@ describe('Lich with Necromancer', () => {
   })
 
   it('+10 Necromancer + +10 per undead stack', () => {
-    const darkQueen = card('Dark Queen', 'undead', 10, [])
-    const result = scoreHand([lich(), necromancer(), darkQueen])
+    const result = scoreHand([lich(), necromancer(), darkQueen()])
     // 13 + 10 (Necromancer) + 10*1 (Dark Queen undead)
     expect(net(result, 'Lich')).toBe(33)
   })
@@ -1732,13 +1727,12 @@ describe('Lich protects undead from Demon blanking', () => {
   })
 
   it('another undead protected by Lich from Demon', () => {
-    const darkKnight = card('Dark Knight', 'undead', 8, [])
-    // Without Lich: darkKnight is sole undead -> Demon blanks it
-    const r1 = scoreHand([demon(), darkKnight])
-    expect(blanked(r1, 'Dark Knight')).toBe(true)
-    // With Lich: undead protected -> darkKnight not blanked
-    const r2 = scoreHand([demon(), darkKnight, lich()])
-    expect(blanked(r2, 'Dark Knight')).toBe(false)
+    // Without Lich: ghoul is sole undead -> Demon blanks it
+    const r1 = scoreHand([demon(), ghoul()])
+    expect(blanked(r1, 'Ghoul')).toBe(true)
+    // With Lich: undead protected -> ghoul not blanked
+    const r2 = scoreHand([demon(), ghoul(), lich()])
+    expect(blanked(r2, 'Ghoul')).toBe(false)
   })
 
   it('BLANK_CARD targeting Lich has no effect (undead protected)', () => {
