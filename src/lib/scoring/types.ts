@@ -53,8 +53,17 @@ export type TEffect =
   | { type: 'CLEARS_ALL_PENALTIES' } // Protection Rune
   // --- blanking protection ---
   | { type: 'PROTECT_SUIT_FROM_BLANK'; suit: string } // Lich/Necromancer: undead can't be blanked (even if protector blanked)
+  | { type: 'IMMUNE_TO_BLANK' } // Angel: this card itself can never be BLANKED
   // --- special blanking ---
   | { type: 'BLANK_DEMON' } // Demon: blank cards whose suit appears only once (excl outsider/Phoenix)
+  // --- discard-pile-dependent bonuses (undead) ---
+  | { type: 'BONUS_PER_DISCARD_SUIT'; suit: string; amount: number } // Dark Queen/Ghoul/Specter/Death Knight
+  | { type: 'BONUS_IF_DISCARD_HAS_CARD'; name: string; amount: number } // Dark Queen: Unicorn in discard
+  // --- other Cursed Hoard mechanics ---
+  | { type: 'BONUS_PER_UNCLEARED_PENALTY_CARD'; amount: number } // Judge
+  | { type: 'BONUS_PER_OTHER_PLAYER'; amount: number } // Genie
+  | { type: 'PENALTY_IF_PLAYER_COUNT_EQ'; count: number; amount: number } // Spyglass
+  | { type: 'BONUS_IF_FACEDOWN_CURSED_ITEMS_GT'; n: number; amount: number } // Treasure Chest
 
 // ------------------------------------------------------------------
 // BonusRule -- an ordered list of condition/effect clauses

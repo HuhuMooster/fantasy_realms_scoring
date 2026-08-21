@@ -41,6 +41,10 @@ export const EXTRA_CARD_NAMES = new Set([
   'Genie',
 ])
 
+// Edition slug for "Buildings, Outsiders & Undead" (Cursed Hoard suits) --
+// having it active raises the base hand size from 7 to 8.
+export const CURSED_HOARD_SUITS_EDITION_SLUG = 'cursed-hoard-cards'
+
 // Suits a flood/flame/Phoenix card can have (for Island target validation)
 export const ISLAND_TARGET_SUITS = new Set(['flood', 'flame'])
 export const PHOENIX_NAMES = new Set(['Phoenix', 'Phoenix (Promo)'])
@@ -89,7 +93,4 @@ export type TAngelConfig = {
 }
 
 export type TActionConfig =
-  | TImpersonateConfig
-  | TBookOfChangesConfig
-  | TIslandConfig
-  | TAngelConfig
+  TImpersonateConfig | TBookOfChangesConfig | TIslandConfig | TAngelConfig

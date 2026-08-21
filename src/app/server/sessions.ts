@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { requireUser } from '@/app/server/_requireAuth'
 import { db } from '@/db/db'
 import { cards } from '@/db/schema/cards'
+import { discardCards } from '@/db/schema/discard-cards'
 import { handCards } from '@/db/schema/hand-cards'
 import { sessionEditions } from '@/db/schema/session-editions'
 import { sessionPlayers } from '@/db/schema/session-players'
@@ -75,9 +76,15 @@ export const getSession = createServerFn({ method: 'GET' })
             )
         : []
 
+    const discardCardRows = await db
+      .select({ cardId: discardCards.cardId })
+      .from(discardCards)
+      .where(eq(discardCards.sessionId, data.id))
+
     return {
       ...session,
       editionIds: editionRows.map((e) => e.editionId),
+      discardCardIds: discardCardRows.map((r) => r.cardId),
       players: players.map((p) => ({
         ...p,
         cardIds: handCardRows
@@ -168,7 +175,33 @@ export const submitHand = createServerFn({ method: 'POST' })
 
     const hand = applyActionConfigs(buildHand(cardRows), rowMap, actionConfigs)
 
-    const result = scoreHand(hand)
+    // Discard pile + player count are authoritative from the DB at save time,
+    // independent of whatever the client's live-preview state happened to be.
+    const [discardCardRows, sessionPlayerRows] = await Promise.all([
+      db
+        .select({ cardId: discardCards.cardId })
+        .from(discardCards)
+        .where(eq(discardCards.sessionId, player.sessionId)),
+      db
+        .select({ id: sessionPlayers.id })
+        .from(sessionPlayers)
+        .where(eq(sessionPlayers.sessionId, player.sessionId)),
+    ])
+
+    const discardRows =
+      discardCardRows.length > 0
+        ? await db
+            .select()
+            .from(cards)
+            .where(
+              inArray(
+                cards.id,
+                discardCardRows.map((r) => r.cardId)
+              )
+            )
+        : []
+
+    const result = scoreHand(hand, buildHand(discardRows), sessionPlayerRows.length)
 
     await db
       .update(sessionPlayers)
@@ -176,6 +209,54 @@ export const submitHand = createServerFn({ method: 'POST' })
       .where(eq(sessionPlayers.id, data.sessionPlayerId))
 
     return { score: result.totalScore }
+  })
+
+export const updateDiscardPile = createServerFn({ method: 'POST' })
+  .inputValidator(z.object({ sessionId: z.string(), cardIds: z.array(z.string()) }))
+  .handler(async ({ data }) => {
+    const user = await requireUser()
+
+    const [session] = await db
+      .select()
+      .from(sessions)
+      .where(and(eq(sessions.id, data.sessionId), eq(sessions.createdBy, user.sub)))
+      .limit(1)
+    if (!session) throw new Error('Not authorized')
+
+    const players = await db
+      .select({ id: sessionPlayers.id })
+      .from(sessionPlayers)
+      .where(eq(sessionPlayers.sessionId, data.sessionId))
+
+    const heldCardIds =
+      players.length > 0
+        ? new Set(
+            (
+              await db
+                .select({ cardId: handCards.cardId })
+                .from(handCards)
+                .where(
+                  inArray(
+                    handCards.sessionPlayerId,
+                    players.map((p) => p.id)
+                  )
+                )
+            ).map((r) => r.cardId)
+          )
+        : new Set<string>()
+
+    // Defense in depth: never let a held card end up in the discard pile,
+    // even if the client's exclusion list was stale.
+    const cardIds = data.cardIds.filter((id) => !heldCardIds.has(id))
+
+    await db.delete(discardCards).where(eq(discardCards.sessionId, data.sessionId))
+    if (cardIds.length > 0) {
+      await db
+        .insert(discardCards)
+        .values(cardIds.map((cardId) => ({ sessionId: data.sessionId, cardId })))
+    }
+
+    return { cardIds }
   })
 
 export const completeSession = createServerFn({ method: 'POST' })

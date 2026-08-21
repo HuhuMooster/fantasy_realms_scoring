@@ -76,39 +76,31 @@ export function SessionForm({ initialNicknames }: ISessionFormProps) {
             <div className="flex flex-wrap gap-2 mt-1">
               {editions.map((ed) => {
                 const isBase = ed.slug === 'base'
+                const isActive = field.state.value.includes(ed.id)
                 return (
-                  <label
+                  <button
                     key={ed.id}
+                    type="button"
+                    aria-pressed={isActive}
+                    disabled={isBase}
+                    onClick={
+                      isBase
+                        ? undefined
+                        : () =>
+                            field.handleChange(
+                              isActive
+                                ? field.state.value.filter((id) => id !== ed.id)
+                                : [...field.state.value, ed.id]
+                            )
+                    }
                     className={cn(
-                      'flex items-center gap-2 cursor-pointer select-none',
-                      isBase && 'cursor-not-allowed opacity-80'
+                      'btn btn-sm',
+                      isActive ? 'btn-primary' : 'btn-outline',
+                      isBase && 'cursor-not-allowed'
                     )}
-                    aria-disabled={isBase}
                   >
-                    <input
-                      type="checkbox"
-                      className={cn(
-                        'checkbox checkbox-sm',
-                        isBase && 'cursor-not-allowed'
-                      )}
-                      disabled={isBase}
-                      aria-disabled={isBase}
-                      checked={field.state.value.includes(ed.id)}
-                      onChange={
-                        isBase
-                          ? undefined
-                          : () =>
-                              field.handleChange(
-                                field.state.value.includes(ed.id)
-                                  ? field.state.value.filter((id) => id !== ed.id)
-                                  : [...field.state.value, ed.id]
-                              )
-                      }
-                    />
-                    <span className="text-sm" aria-disabled={isBase}>
-                      {ed.name}
-                    </span>
-                  </label>
+                    {ed.name}
+                  </button>
                 )
               })}
             </div>

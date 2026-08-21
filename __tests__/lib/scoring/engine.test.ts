@@ -1991,3 +1991,359 @@ describe('Blanked cards excluded from effects', () => {
     expect(result.perCard.find((c) => c.name === 'Collector')!.bonus).toBe(0)
   })
 })
+
+// ---------------------------------------------------------------------------
+// Cursed Hoard: discard pile, player count, Judge, Angel, name cross-references
+// ---------------------------------------------------------------------------
+
+describe('Discard-pile-dependent bonuses (undead)', () => {
+  function darkQueen() {
+    return card('Dark Queen', 'undead', 10, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'land', amount: 5 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'flood', amount: 5 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'flame', amount: 5 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'weather', amount: 5 },
+          { type: 'BONUS_IF_DISCARD_HAS_CARD', name: 'Unicorn', amount: 5 },
+        ],
+      },
+    ])
+  }
+
+  it('Dark Queen counts land/flood/flame/weather in discard, +5 for Unicorn', () => {
+    const discard = [
+      card('D1', 'land', 1),
+      card('D2', 'flood', 1),
+      card('D3', 'flame', 1),
+      card('D4', 'weather', 1),
+      card('Unicorn', 'beast', 9),
+    ]
+    const result = scoreHand([darkQueen()], discard)
+    expect(net(result, 'Dark Queen')).toBe(10 + 4 * 5 + 5)
+  })
+
+  it('Dark Queen ignores cards still in the hand, only counts the discard pile', () => {
+    const result = scoreHand([darkQueen(), card('SomeLand', 'land', 1)], [])
+    expect(net(result, 'Dark Queen')).toBe(10)
+  })
+
+  function ghoul() {
+    return card('Ghoul', 'undead', 8, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'wizard', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'leader', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'army', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'beast', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'undead', amount: 4 },
+        ],
+      },
+    ])
+  }
+
+  it('Ghoul counts wizard/leader/army/beast/undead in discard', () => {
+    const discard = [
+      card('W', 'wizard', 1),
+      card('L', 'leader', 1),
+      card('A', 'army', 1),
+      card('B', 'beast', 1),
+      card('U', 'undead', 1),
+      card('Irrelevant', 'land', 1),
+    ]
+    const result = scoreHand([ghoul()], discard)
+    expect(net(result, 'Ghoul')).toBe(8 + 5 * 4)
+  })
+
+  function specter() {
+    return card('Specter', 'undead', 12, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'wizard', amount: 6 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'artifact', amount: 6 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'outsider', amount: 6 },
+        ],
+      },
+    ])
+  }
+
+  it('Specter counts wizard/artifact/outsider in discard', () => {
+    const discard = [
+      card('W', 'wizard', 1),
+      card('Ar', 'artifact', 1),
+      card('O', 'outsider', 1),
+    ]
+    const result = scoreHand([specter()], discard)
+    expect(net(result, 'Specter')).toBe(12 + 3 * 6)
+  })
+
+  function deathKnight() {
+    return card('Death Knight', 'undead', 14, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'weapon', amount: 7 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'army', amount: 7 },
+        ],
+      },
+    ])
+  }
+
+  it('Death Knight counts weapon/army in discard', () => {
+    const discard = [
+      card('Wp1', 'weapon', 1),
+      card('Wp2', 'weapon', 1),
+      card('A1', 'army', 1),
+    ]
+    const result = scoreHand([deathKnight()], discard)
+    expect(net(result, 'Death Knight')).toBe(14 + 3 * 7)
+  })
+})
+
+describe('Judge (uncleared penalty count)', () => {
+  function judge() {
+    return card('Judge', 'outsider', 11, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'BONUS_PER_UNCLEARED_PENALTY_CARD', amount: 10 }],
+      },
+    ])
+  }
+
+  it('counts cards with a numeric penalty effect', () => {
+    const result = scoreHand([judge(), knights(), swamp()])
+    expect(net(result, 'Judge')).toBe(11 + 2 * 10)
+  })
+
+  it('also counts cards that only blank other cards (no numeric penalty)', () => {
+    const blanker = card('ArmyBlanker', 'flood', 1, [
+      { condition: { type: 'ALWAYS' }, effects: [{ type: 'BLANK_SUIT', suit: 'army' }] },
+    ])
+    const result = scoreHand([judge(), blanker])
+    expect(net(result, 'Judge')).toBe(11 + 10)
+  })
+
+  it('also counts cards that self-blank conditionally (BLANK_SELF)', () => {
+    const result = scoreHand([judge(), warDirigible()])
+    // War Dirigible: no army in hand -> self-blanks, but it still "carries" a
+    // penalty signal even while blanked (Judge counts non-blanked cards only,
+    // so War Dirigible itself doesn't count once blanked -- this checks Judge
+    // still resolves without throwing and only counts itself).
+    expect(net(result, 'Judge')).toBe(11)
+  })
+
+  it('excludes cards whose penalty was cleared', () => {
+    const result = scoreHand([judge(), mountain(), swamp()])
+    // Mountain clears the flood penalty -> Swamp's penalty is cleared.
+    expect(net(result, 'Judge')).toBe(11)
+  })
+
+  it('excludes a blanked card from the count (the blanker itself can still count)', () => {
+    const blankerCard = card('KnightsBlanker', 'flame', 1, [
+      { condition: { type: 'ALWAYS' }, effects: [{ type: 'BLANK_CARD', name: 'Knights' }] },
+    ])
+    const result = scoreHand([judge(), knights(), blankerCard])
+    // Knights is blanked -> excluded. blankerCard itself carries a penalty
+    // signal (it blanks another card) and is not itself blanked -> counted.
+    expect(net(result, 'Judge')).toBe(11 + 10)
+  })
+})
+
+describe('Player-count-dependent effects', () => {
+  function genie() {
+    return card('Genie', 'outsider', -50, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'BONUS_PER_OTHER_PLAYER', amount: 10 }],
+      },
+    ])
+  }
+
+  it('Genie gains +10 per other player', () => {
+    const result = scoreHand([genie()], [], 4)
+    expect(net(result, 'Genie')).toBe(-50 + 30)
+  })
+
+  it('Genie gains nothing extra with a single player', () => {
+    const result = scoreHand([genie()], [], 1)
+    expect(net(result, 'Genie')).toBe(-50)
+  })
+
+  it('defaults to 4 players when playerCount is omitted', () => {
+    const result = scoreHand([genie()])
+    expect(net(result, 'Genie')).toBe(-50 + 30)
+  })
+
+  function spyglass() {
+    return card('Spyglass', 'cursed-item', -1, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'PENALTY_IF_PLAYER_COUNT_EQ', count: 2, amount: 9 }],
+      },
+    ])
+  }
+
+  it('Spyglass drops to -10 total in a 2-player game', () => {
+    const result = scoreHand([spyglass()], [], 2)
+    expect(net(result, 'Spyglass')).toBe(-10)
+  })
+
+  it('Spyglass stays at -1 with more than 2 players', () => {
+    const result = scoreHand([spyglass()], [], 4)
+    expect(net(result, 'Spyglass')).toBe(-1)
+  })
+})
+
+describe('Treasure Chest (facedown cursed items)', () => {
+  function treasureChest() {
+    return card('Treasure Chest', 'cursed-item', -5, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'BONUS_IF_FACEDOWN_CURSED_ITEMS_GT', n: 3, amount: 25 }],
+      },
+    ])
+  }
+
+  it('gains +25 with more than 3 facedown cursed items total', () => {
+    const hand = [
+      treasureChest(),
+      card('Item1', 'cursed-item', -1),
+      card('Item2', 'cursed-item', -1),
+      card('Item3', 'cursed-item', -1),
+    ]
+    const result = scoreHand(hand)
+    expect(net(result, 'Treasure Chest')).toBe(-5 + 25)
+  })
+
+  it('no bonus with 3 or fewer facedown cursed items', () => {
+    const hand = [
+      treasureChest(),
+      card('Item1', 'cursed-item', -1),
+      card('Item2', 'cursed-item', -1),
+    ]
+    const result = scoreHand(hand)
+    expect(net(result, 'Treasure Chest')).toBe(-5)
+  })
+})
+
+describe('Angel (immune to blank)', () => {
+  function angel() {
+    return card('Angel', 'outsider', 16, [
+      { condition: { type: 'ALWAYS' }, effects: [{ type: 'IMMUNE_TO_BLANK' }] },
+    ])
+  }
+
+  it('cannot be blanked by a suit-wide blank', () => {
+    const blanker = card('OutsiderBlanker', 'flame', 1, [
+      { condition: { type: 'ALWAYS' }, effects: [{ type: 'BLANK_SUIT', suit: 'outsider' }] },
+    ])
+    const result = scoreHand([angel(), blanker])
+    expect(blanked(result, 'Angel')).toBe(false)
+    expect(net(result, 'Angel')).toBe(16)
+  })
+
+  it('cannot be blanked by a direct name-targeted blank', () => {
+    const blanker = card('NameBlanker', 'flame', 1, [
+      { condition: { type: 'ALWAYS' }, effects: [{ type: 'BLANK_CARD', name: 'Angel' }] },
+    ])
+    const result = scoreHand([angel(), blanker])
+    expect(blanked(result, 'Angel')).toBe(false)
+  })
+})
+
+describe('Cursed Hoard replacement name cross-references', () => {
+  // These mirror the fixed src/db/seed.ts conditions: base and Cursed Hoard
+  // replacement cards share a printed name in the official rules, so
+  // HAS_CARD conditions referencing the base name must also match the
+  // Cursed Hoard variant.
+  function necromancerCursedHoard() {
+    return card('Necromancer (Cursed Hoard)', 'wizard', 3, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'PROTECT_SUIT_FROM_BLANK', suit: 'undead' }],
+      },
+    ])
+  }
+
+  function lichRecognizingBothNecromancers() {
+    return card('Lich', 'undead', 13, [
+      {
+        condition: {
+          type: 'OR',
+          conditions: [
+            { type: 'HAS_CARD', name: 'Necromancer' },
+            { type: 'HAS_CARD', name: 'Necromancer (Cursed Hoard)' },
+          ],
+        },
+        effects: [{ type: 'BONUS_FLAT', amount: 10 }],
+      },
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER', suit: 'undead', amount: 10 },
+          { type: 'PROTECT_SUIT_FROM_BLANK', suit: 'undead' },
+        ],
+      },
+    ])
+  }
+
+  it('Lich recognizes the Cursed Hoard Necromancer variant, not just the base one', () => {
+    const result = scoreHand([lichRecognizingBothNecromancers(), necromancerCursedHoard()])
+    expect(net(result, 'Lich')).toBe(13 + 10)
+  })
+
+  it('Lich still recognizes the base Necromancer', () => {
+    const result = scoreHand([lichRecognizingBothNecromancers(), necromancer()])
+    expect(net(result, 'Lich')).toBe(13 + 10)
+  })
+
+  function rangersCursedHoard() {
+    return card('Rangers (Cursed Hoard)', 'army', 5, [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER', suit: 'land', amount: 10 },
+          { type: 'BONUS_PER', suit: 'building', amount: 10 },
+        ],
+      },
+    ])
+  }
+
+  function greatFloodRecognizingBothRangers() {
+    return card('Great Flood', 'flood', 32, [
+      {
+        condition: {
+          type: 'NOT',
+          condition: {
+            type: 'OR',
+            conditions: [
+              { type: 'HAS_CARD', name: 'Rangers' },
+              { type: 'HAS_CARD', name: 'Rangers (Cursed Hoard)' },
+              { type: 'HAS_CARD', name: 'Warship' },
+            ],
+          },
+        },
+        effects: [{ type: 'BLANK_SUIT', suit: 'army' }],
+      },
+    ])
+  }
+
+  it('Great Flood spares armies when the Cursed Hoard Rangers variant is present', () => {
+    const someArmy = card('SomeArmy', 'army', 5, [])
+    const result = scoreHand([
+      greatFloodRecognizingBothRangers(),
+      rangersCursedHoard(),
+      someArmy,
+    ])
+    expect(blanked(result, 'SomeArmy')).toBe(false)
+  })
+
+  it('Great Flood still blanks armies when neither Rangers variant is present', () => {
+    const someArmy = card('SomeArmy', 'army', 5, [])
+    const result = scoreHand([greatFloodRecognizingBothRangers(), someArmy])
+    expect(blanked(result, 'SomeArmy')).toBe(true)
+  })
+})

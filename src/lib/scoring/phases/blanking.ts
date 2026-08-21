@@ -20,6 +20,8 @@ export function buildBlankedSet(
   // Collect suit protection from ALL cards (including blanked) - PROTECT_SUIT_FROM_BLANK
   // This is static and doesn't change during iteration.
   const protectedSuits = new Set<string>()
+  // Cards that are always immune to blanking, regardless of condition (Angel).
+  const immuneCardIds = new Set<string>()
   for (const card of hand) {
     for (const clause of card.bonusRule) {
       // Evaluate condition against full hand (no blankedIds) since protector
@@ -28,6 +30,8 @@ export function buildBlankedSet(
       for (const effect of clause.effects) {
         if (effect.type === 'PROTECT_SUIT_FROM_BLANK') {
           protectedSuits.add(effect.suit)
+        } else if (effect.type === 'IMMUNE_TO_BLANK') {
+          immuneCardIds.add(card.id)
         }
       }
     }
@@ -37,6 +41,7 @@ export function buildBlankedSet(
   function canBeBlanked(card: TCardData): boolean {
     if (card.blankedProtected) return false
     if (protectedSuits.has(card.suit)) return false
+    if (immuneCardIds.has(card.id)) return false
     return true
   }
 

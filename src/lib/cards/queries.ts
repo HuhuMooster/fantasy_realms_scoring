@@ -9,7 +9,7 @@ export const editionsQueryOptions = () =>
   })
 
 export const cardsQueryOptions = (filters: {
-  editionId?: string
+  editionIds?: string[]
   suit?: string
   q?: string
 }) =>

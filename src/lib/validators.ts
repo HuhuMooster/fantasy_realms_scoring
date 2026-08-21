@@ -16,7 +16,7 @@ export const registerSchema = z.object({
 })
 
 export const cardFiltersSchema = z.object({
-  editionId: z.string().optional(),
+  editionIds: z.array(z.string()).optional(),
   suit: z.string().optional(),
   q: z.string().optional(),
 })

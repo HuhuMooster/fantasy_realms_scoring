@@ -7,6 +7,7 @@ import {
   getSession,
   getSessions,
   submitHand,
+  updateDiscardPile,
 } from '@/app/server/sessions'
 
 export const sessionsQueryOptions = () =>
@@ -39,4 +40,9 @@ export const completeSessionMutationOptions = () =>
 export const submitHandMutationOptions = () =>
   mutationOptions({
     mutationFn: submitHand,
+  })
+
+export const updateDiscardPileMutationOptions = () =>
+  mutationOptions({
+    mutationFn: updateDiscardPile,
   })

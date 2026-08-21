@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq, ilike } from 'drizzle-orm'
+import { and, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { TSuit } from '@/components/cards/suit-badge'
@@ -11,8 +11,12 @@ import { cardFiltersSchema } from '@/lib/validators'
 export const getCards = createServerFn({ method: 'GET' })
   .inputValidator(cardFiltersSchema)
   .handler(async ({ data }) => {
+    if (data.editionIds && data.editionIds.length === 0) return []
+
     const conditions = []
-    if (data.editionId) conditions.push(eq(cards.editionId, data.editionId))
+    if (data.editionIds && data.editionIds.length > 0) {
+      conditions.push(inArray(cards.editionId, data.editionIds))
+    }
     if (data.suit) conditions.push(eq(cards.suit, data.suit))
     if (data.q) conditions.push(ilike(cards.name, `%${data.q}%`))
 

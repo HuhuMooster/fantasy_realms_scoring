@@ -1,12 +1,13 @@
 import { createId } from '@paralleldrive/cuid2'
 import bcrypt from 'bcryptjs'
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 import { cards } from '@/db/schema/cards'
 import { editions } from '@/db/schema/editions'
 import { inviteCodes } from '@/db/schema/invite-codes'
+import { sessionEditions } from '@/db/schema/session-editions'
 import { users } from '@/db/schema/users'
 import { env } from '@/env'
 import type { TBonusRule } from '@/lib/scoring/types'
@@ -24,6 +25,38 @@ type TCardDef = {
   basePower: number
   description: string
   bonusRule: TBonusRule
+}
+
+// The Cursed Hoard suits edition replaces four base cards with variants that
+// carry the same printed name in the official rules (Bell Tower, Rangers,
+// Great Flood, Necromancer). This app seeds them as distinctly-named cards
+// per edition, so any HAS_CARD condition that references the base name must
+// also match its Cursed Hoard replacement -- otherwise cards like Lich or
+// Swamp silently stop recognizing them once a table plays with that edition
+// instead of the base one.
+const RANGERS_NAMES = ['Rangers', 'Rangers (Cursed Hoard)']
+const NECROMANCER_NAMES = ['Necromancer', 'Necromancer (Cursed Hoard)']
+const BELL_TOWER_NAMES = ['Bell Tower', 'Bell Tower (Cursed Hoard)']
+const GREAT_FLOOD_NAMES = ['Great Flood', 'Great Flood (Cursed Hoard)']
+
+function hasAnyName(...names: string[]): TBonusRule[number]['condition'] {
+  if (names.length === 1) return { type: 'HAS_CARD', name: names[0] }
+  return { type: 'OR', conditions: names.map((name) => ({ type: 'HAS_CARD', name })) }
+}
+
+// jsonb round-trips through Postgres don't preserve object key order, so a
+// plain JSON.stringify diff between a freshly-read bonusRule and a literal
+// def would report a "change" on every reseed even when nothing differs.
+// Sort keys recursively before comparing.
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+      a.localeCompare(b)
+    )
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`).join(',')}}`
+  }
+  return JSON.stringify(value)
 }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +196,7 @@ const BASE_CARDS: TCardDef[] = [
           condition: {
             type: 'OR',
             conditions: [
-              { type: 'HAS_CARD', name: 'Rangers' },
+              hasAnyName(...RANGERS_NAMES),
               { type: 'HAS_CARD', name: 'Warship' },
             ],
           },
@@ -185,7 +218,7 @@ const BASE_CARDS: TCardDef[] = [
           condition: {
             type: 'OR',
             conditions: [
-              { type: 'HAS_CARD', name: 'Rangers' },
+              hasAnyName(...RANGERS_NAMES),
               { type: 'HAS_CARD', name: 'Warship' },
             ],
           },
@@ -267,7 +300,7 @@ const BASE_CARDS: TCardDef[] = [
       {
         condition: {
           type: 'NOT',
-          condition: { type: 'HAS_CARD', name: 'Rangers' },
+          condition: hasAnyName(...RANGERS_NAMES),
         },
         effects: [{ type: 'PENALTY_PER', suit: 'army', amount: 5 }],
       },
@@ -303,7 +336,7 @@ const BASE_CARDS: TCardDef[] = [
               type: 'OR',
               conditions: [
                 { type: 'HAS_CARD', name: 'Blizzard' },
-                { type: 'HAS_CARD', name: 'Great Flood' },
+                hasAnyName(...GREAT_FLOOD_NAMES),
               ],
             },
           ],
@@ -370,7 +403,7 @@ const BASE_CARDS: TCardDef[] = [
           type: 'AND',
           conditions: [
             { type: 'HAS_CARD', name: 'Book of Changes' },
-            { type: 'HAS_CARD', name: 'Bell Tower' },
+            hasAnyName(...BELL_TOWER_NAMES),
             { type: 'HAS_SUIT', suit: 'wizard' },
           ],
         },
@@ -472,7 +505,7 @@ const BASE_CARDS: TCardDef[] = [
       {
         condition: {
           type: 'NOT',
-          condition: { type: 'HAS_CARD', name: 'Rangers' },
+          condition: hasAnyName(...RANGERS_NAMES),
         },
         effects: [{ type: 'PENALTY_PER', suit: 'army', amount: 2, excludeSelf: true }],
       },
@@ -705,7 +738,7 @@ const BASE_CARDS: TCardDef[] = [
       {
         condition: {
           type: 'NOT',
-          condition: { type: 'HAS_CARD', name: 'Rangers' },
+          condition: hasAnyName(...RANGERS_NAMES),
         },
         effects: [{ type: 'BLANK_SUIT', suit: 'army' }],
       },
@@ -881,7 +914,7 @@ const BASE_CARDS: TCardDef[] = [
             },
             {
               type: 'NOT',
-              condition: { type: 'HAS_CARD', name: 'Rangers' },
+              condition: hasAnyName(...RANGERS_NAMES),
             },
           ],
         },
@@ -1017,10 +1050,10 @@ const BASE_CARDS: TCardDef[] = [
 ]
 
 // ---------------------------------------------------------------------------
-// CURSED HOARD -- CH01-CH47
-// New suits: building, outsider, undead, cursed-item
+// CURSED HOARD -- New Cards module (CH suits: building, outsider, undead)
+// Independent variant: Buildings, Outsiders & Undead
 // ---------------------------------------------------------------------------
-const CURSED_HOARD_CARDS: TCardDef[] = [
+const CURSED_HOARD_NEW_CARDS: TCardDef[] = [
   // -----------------------------------------------------------------------
   // BUILDING (4 new + 1 replacement Bell Tower)
   // -----------------------------------------------------------------------
@@ -1053,7 +1086,7 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
         ],
       },
       {
-        condition: { type: 'HAS_CARD', name: 'Necromancer' },
+        condition: hasAnyName(...NECROMANCER_NAMES),
         effects: [{ type: 'BONUS_FLAT', amount: 5 }],
       },
       {
@@ -1163,7 +1196,7 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
             type: 'OR',
             conditions: [
               { type: 'HAS_SUIT', suit: 'undead' },
-              { type: 'HAS_CARD', name: 'Necromancer' },
+              hasAnyName(...NECROMANCER_NAMES),
               { type: 'HAS_CARD', name: 'Demon' },
             ],
           },
@@ -1178,7 +1211,7 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
           type: 'OR',
           conditions: [
             { type: 'HAS_SUIT', suit: 'undead' },
-            { type: 'HAS_CARD', name: 'Necromancer' },
+            hasAnyName(...NECROMANCER_NAMES),
             { type: 'HAS_CARD', name: 'Demon' },
           ],
         },
@@ -1196,14 +1229,24 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
     basePower: -50,
     description:
       '+10 per other player. At the end of the game, look through the draw deck and put one card in your hand. (Resolves after Leprechaun.)',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'BONUS_PER_OTHER_PLAYER', amount: 10 }],
+      },
+    ],
   },
   {
     name: 'Judge',
     suit: 'outsider',
     basePower: 11,
     description: '+10 for each card that contains a Penalty that is not CLEARED.',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'BONUS_PER_UNCLEARED_PENALTY_CARD', amount: 10 }],
+      },
+    ],
   },
   {
     name: 'Angel',
@@ -1211,7 +1254,12 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
     basePower: 16,
     description:
       'Prevent one other card from being BLANKED. This card can never be BLANKED.',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'IMMUNE_TO_BLANK' }],
+      },
+    ],
   },
   {
     name: 'Leprechaun',
@@ -1244,7 +1292,18 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
     basePower: 10,
     description:
       '+5 for each Land, Flood, Flame, Weather, and Unicorn in the discard area.',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'land', amount: 5 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'flood', amount: 5 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'flame', amount: 5 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'weather', amount: 5 },
+          { type: 'BONUS_IF_DISCARD_HAS_CARD', name: 'Unicorn', amount: 5 },
+        ],
+      },
+    ],
   },
   {
     name: 'Ghoul',
@@ -1252,14 +1311,34 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
     basePower: 8,
     description:
       '+4 for each Wizard, Leader, Army, Beast, and Undead in the discard area.',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'wizard', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'leader', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'army', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'beast', amount: 4 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'undead', amount: 4 },
+        ],
+      },
+    ],
   },
   {
     name: 'Specter',
     suit: 'undead',
     basePower: 12,
     description: '+6 for each Wizard, Artifact, and Outsider in the discard area.',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'wizard', amount: 6 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'artifact', amount: 6 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'outsider', amount: 6 },
+        ],
+      },
+    ],
   },
   {
     name: 'Lich',
@@ -1269,7 +1348,7 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
       '+10 for Necromancer and each other Undead. Undead may not be BLANKED.',
     bonusRule: [
       {
-        condition: { type: 'HAS_CARD', name: 'Necromancer' },
+        condition: hasAnyName(...NECROMANCER_NAMES),
         effects: [{ type: 'BONUS_FLAT', amount: 10 }],
       },
       {
@@ -1286,7 +1365,15 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
     suit: 'undead',
     basePower: 14,
     description: '+7 for each Weapon and Army in the discard area.',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'weapon', amount: 7 },
+          { type: 'BONUS_PER_DISCARD_SUIT', suit: 'army', amount: 7 },
+        ],
+      },
+    ],
   },
 
   // -----------------------------------------------------------------------
@@ -1324,7 +1411,7 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
           condition: {
             type: 'OR',
             conditions: [
-              { type: 'HAS_CARD', name: 'Rangers' },
+              hasAnyName(...RANGERS_NAMES),
               { type: 'HAS_CARD', name: 'Warship' },
             ],
           },
@@ -1403,17 +1490,25 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
       'Mirage may duplicate the name and suit of any one Army, Building, Land, Weather, Flood or Flame in the game. Does not take the bonus, penalty, or base strength of the card duplicated.',
     bonusRule: [],
   },
+]
 
-  // -----------------------------------------------------------------------
-  // CURSED ITEMS (CH24-CH47) -- mostly negative base power, action cards
-  // -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// CURSED HOARD -- Cursed Items module (CH24-CH47)
+// Independent variant: Cursed Items. Mostly negative base power, action cards.
+// ---------------------------------------------------------------------------
+const CURSED_HOARD_ITEMS_CARDS: TCardDef[] = [
   {
     name: 'Spyglass',
     suit: 'cursed-item',
     basePower: -1,
     description:
       "Look at another player's hand. (*This item's base value is -10 in 2-player game)",
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'PENALTY_IF_PLAYER_COUNT_EQ', count: 2, amount: 9 }],
+      },
+    ],
   },
   {
     name: 'Sarcophagus',
@@ -1529,7 +1624,12 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
     basePower: -5,
     description:
       'Worth +25 points at the end of the game if you have at least three other Cursed Items facedown.',
-    bonusRule: [],
+    bonusRule: [
+      {
+        condition: { type: 'ALWAYS' },
+        effects: [{ type: 'BONUS_IF_FACEDOWN_CURSED_ITEMS_GT', n: 3, amount: 25 }],
+      },
+    ],
   },
   {
     name: 'Fishhook',
@@ -1624,53 +1724,171 @@ const CURSED_HOARD_CARDS: TCardDef[] = [
   }
 
   // ---------- Editions ----------
+  // Upserts an edition by slug. If `legacySlug` is given and no edition with
+  // `slug` exists yet, an edition still sitting under the old `legacySlug` is
+  // renamed in place (preserving its id) instead of creating a duplicate --
+  // this is how the old combined 'cursed-hoard' edition becomes the
+  // 'cursed-hoard-cards' ("Buildings, Outsiders & Undead") edition without
+  // orphaning any cards/sessions that already reference it.
   async function upsertEdition(
     slug: string,
     name: string,
-    displayOrder: number
-  ): Promise<string> {
+    displayOrder: number,
+    legacySlug?: string
+  ): Promise<{ id: string; migratedFromLegacy: boolean }> {
     const rows = await db.select().from(editions).where(eq(editions.slug, slug))
-    if (rows.length > 0) return rows[0].id
+    if (rows.length > 0) return { id: rows[0].id, migratedFromLegacy: false }
+
+    if (legacySlug) {
+      const legacyRows = await db
+        .select()
+        .from(editions)
+        .where(eq(editions.slug, legacySlug))
+      if (legacyRows.length > 0) {
+        await db
+          .update(editions)
+          .set({ slug, name, displayOrder })
+          .where(eq(editions.id, legacyRows[0].id))
+        console.log(`Edition '${legacySlug}' migrated to '${slug}' ('${name}').`)
+        return { id: legacyRows[0].id, migratedFromLegacy: true }
+      }
+    }
+
     const [ed] = await db
       .insert(editions)
       .values({ slug, name, displayOrder })
       .returning()
     console.log(`Edition '${name}' created.`)
-    return ed.id
+    return { id: ed.id, migratedFromLegacy: false }
   }
 
-  const baseEditionId = await upsertEdition('base', 'Base Game', 1)
-  const chEditionId = await upsertEdition('cursed-hoard', 'Cursed Hoard', 2)
+  const { id: baseEditionId } = await upsertEdition('base', 'Base Game', 1)
+  const { id: chCardsEditionId, migratedFromLegacy } = await upsertEdition(
+    'cursed-hoard-cards',
+    'Buildings, Outsiders & Undead',
+    2,
+    'cursed-hoard'
+  )
+  const { id: chItemsEditionId } = await upsertEdition(
+    'cursed-hoard-items',
+    'Cursed Items',
+    3
+  )
 
-  // ---------- Cards (delete + re-insert per edition for fresh data) ----------
+  // ---------- Migrate legacy combined 'cursed-hoard' edition ----------
+  // The old edition held both the new-suit cards and the cursed-item cards
+  // together. Move the cursed-item cards (and any sessions that used them)
+  // onto the new dedicated edition, by id, so existing hands/scores stay intact.
+  if (migratedFromLegacy) {
+    const strandedItemCards = await db
+      .select()
+      .from(cards)
+      .where(and(eq(cards.editionId, chCardsEditionId), eq(cards.suit, 'cursed-item')))
+
+    if (strandedItemCards.length > 0) {
+      await db
+        .update(cards)
+        .set({ editionId: chItemsEditionId })
+        .where(
+          inArray(
+            cards.id,
+            strandedItemCards.map((c) => c.id)
+          )
+        )
+      console.log(
+        `Moved ${strandedItemCards.length} Cursed Item cards to the 'Cursed Items' edition.`
+      )
+    }
+
+    const legacySessionLinks = await db
+      .select({ sessionId: sessionEditions.sessionId })
+      .from(sessionEditions)
+      .where(eq(sessionEditions.editionId, chCardsEditionId))
+
+    if (legacySessionLinks.length > 0) {
+      await db.insert(sessionEditions).values(
+        legacySessionLinks.map((l) => ({
+          sessionId: l.sessionId,
+          editionId: chItemsEditionId,
+        }))
+      )
+      console.log(
+        `Linked ${legacySessionLinks.length} existing session(s) to the 'Cursed Items' edition.`
+      )
+    }
+  }
+
+  // ---------- Cards (upsert by name per edition) ----------
+  // Updates in place (by name) rather than delete+reinsert so that card ids
+  // stay stable across reseeds -- hand_cards/discard_cards reference
+  // cards.id with no onDelete cascade, so a blind delete would either fail
+  // or orphan existing sessions' hands.
   async function seedCards(defs: TCardDef[], editionId: string, label: string) {
-    const existing = await db.select().from(cards).where(eq(cards.editionId, editionId))
+    const existingRows = await db
+      .select()
+      .from(cards)
+      .where(eq(cards.editionId, editionId))
+    const existingByName = new Map(existingRows.map((r) => [r.name, r]))
 
-    if (existing.length === defs.length) {
-      console.log(`${label}: ${existing.length} cards already seeded, skipping.`)
-      return
+    let inserted = 0
+    let updated = 0
+    for (const def of defs) {
+      const existing = existingByName.get(def.name)
+      if (!existing) {
+        await db.insert(cards).values({
+          name: def.name,
+          suit: def.suit,
+          basePower: def.basePower,
+          editionId,
+          bonusRule: def.bonusRule as object,
+          description: def.description,
+        })
+        inserted++
+        continue
+      }
+
+      existingByName.delete(def.name)
+      const changed =
+        existing.suit !== def.suit ||
+        existing.basePower !== def.basePower ||
+        existing.description !== def.description ||
+        stableStringify(existing.bonusRule) !== stableStringify(def.bonusRule)
+
+      if (changed) {
+        await db
+          .update(cards)
+          .set({
+            suit: def.suit,
+            basePower: def.basePower,
+            bonusRule: def.bonusRule as object,
+            description: def.description,
+          })
+          .where(eq(cards.id, existing.id))
+        updated++
+      }
     }
 
-    if (existing.length > 0) {
-      await db.delete(cards).where(eq(cards.editionId, editionId))
-      console.log(`${label}: removed ${existing.length} stale cards.`)
+    const staleIds = [...existingByName.values()].map((r) => r.id)
+    if (staleIds.length > 0) {
+      await db.delete(cards).where(inArray(cards.id, staleIds))
     }
 
-    await db.insert(cards).values(
-      defs.map((c) => ({
-        name: c.name,
-        suit: c.suit,
-        basePower: c.basePower,
-        editionId,
-        bonusRule: c.bonusRule as object,
-        description: c.description,
-      }))
+    console.log(
+      `${label}: ${inserted} inserted, ${updated} updated, ${staleIds.length} removed (${defs.length} total).`
     )
-    console.log(`${label}: seeded ${defs.length} cards.`)
   }
 
   await seedCards(BASE_CARDS, baseEditionId, 'Base Game')
-  await seedCards(CURSED_HOARD_CARDS, chEditionId, 'Cursed Hoard')
+  await seedCards(
+    CURSED_HOARD_NEW_CARDS,
+    chCardsEditionId,
+    'Cursed Hoard: Buildings, Outsiders & Undead'
+  )
+  await seedCards(
+    CURSED_HOARD_ITEMS_CARDS,
+    chItemsEditionId,
+    'Cursed Hoard: Cursed Items'
+  )
 
   await client.end()
 })()

@@ -1,12 +1,23 @@
 import { PHOENIX_NAMES } from '@/lib/calculator/actions'
 import { buildBlankedSet } from '@/lib/scoring/phases/blanking'
 import { computePenaltyClearedIds } from '@/lib/scoring/phases/penaltyClearing'
-import { evaluateCondition, suitMatches } from '@/lib/scoring/rules'
+import {
+  cardCarriesPenaltySignal,
+  evaluateCondition,
+  suitMatches,
+} from '@/lib/scoring/rules'
 import type { TCardData, TCardScoreDetail, TScoreResult } from '@/lib/scoring/types'
 
-export function scoreHand(hand: TCardData[]): TScoreResult {
+const DEFAULT_PLAYER_COUNT = 4
+
+export function scoreHand(
+  hand: TCardData[],
+  discard: TCardData[] = [],
+  playerCount: number = DEFAULT_PLAYER_COUNT
+): TScoreResult {
   const penaltyClearedIds = computePenaltyClearedIds(hand)
   const blanked = buildBlankedSet(hand, penaltyClearedIds)
+  const facedownCursedItemCount = hand.filter((c) => c.suit === 'cursed-item').length
 
   const perCard: TCardScoreDetail[] = []
 
@@ -181,6 +192,44 @@ export function scoreHand(hand: TCardData[]): TScoreResult {
             break
           }
 
+          // ---- discard-pile-dependent (undead) ----
+          case 'BONUS_PER_DISCARD_SUIT': {
+            const count = discard.filter((c) => suitMatches(c, effect.suit)).length
+            bonus += count * effect.amount
+            break
+          }
+
+          case 'BONUS_IF_DISCARD_HAS_CARD': {
+            if (discard.some((c) => c.name === effect.name)) bonus += effect.amount
+            break
+          }
+
+          // ---- other Cursed Hoard mechanics ----
+          case 'BONUS_PER_UNCLEARED_PENALTY_CARD': {
+            const count = hand.filter(
+              (c) =>
+                !blanked.has(c.id) &&
+                !penaltyClearedIds.has(c.id) &&
+                cardCarriesPenaltySignal(c)
+            ).length
+            bonus += count * effect.amount
+            break
+          }
+
+          case 'BONUS_PER_OTHER_PLAYER':
+            bonus += Math.max(0, playerCount - 1) * effect.amount
+            break
+
+          case 'PENALTY_IF_PLAYER_COUNT_EQ':
+            if (!cardPenaltyCleared && playerCount === effect.count) {
+              penalty += effect.amount
+            }
+            break
+
+          case 'BONUS_IF_FACEDOWN_CURSED_ITEMS_GT':
+            if (facedownCursedItemCount > effect.n) bonus += effect.amount
+            break
+
           // ---- handled in earlier phases ----
           case 'BLANK_SUIT':
           case 'BLANK_SUIT_EXCEPT':
@@ -191,6 +240,7 @@ export function scoreHand(hand: TCardData[]): TScoreResult {
           case 'CLEARS_CARD_PENALTY':
           case 'CLEARS_ALL_PENALTIES':
           case 'PROTECT_SUIT_FROM_BLANK':
+          case 'IMMUNE_TO_BLANK':
             break
         }
       }

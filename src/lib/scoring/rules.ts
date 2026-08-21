@@ -58,3 +58,26 @@ export function evaluateCondition(
       return condition.conditions.some((c) => evaluateCondition(c, hand, blankedIds))
   }
 }
+
+// Effect types that correspond to the official rulebook's static "this card
+// carries a Penalty" flag (used by Judge). That flag isn't just "has a
+// PENALTY_FLAT/PENALTY_PER effect" -- cards that only blank other cards, or
+// blank themselves under some condition (e.g. Great Flood, Rainstorm, Crypt,
+// Garden, Demon, Warship, Phoenix), are flagged too. Verified card-by-card
+// against the official reference implementation.
+const PENALTY_SIGNAL_EFFECT_TYPES = new Set([
+  'PENALTY_FLAT',
+  'PENALTY_PER',
+  'PENALTY_IF_PLAYER_COUNT_EQ',
+  'BLANK_SELF',
+  'BLANK_SUIT',
+  'BLANK_SUIT_EXCEPT',
+  'BLANK_CARD',
+  'BLANK_DEMON',
+])
+
+export function cardCarriesPenaltySignal(card: TCardData): boolean {
+  return card.bonusRule.some((clause) =>
+    clause.effects.some((effect) => PENALTY_SIGNAL_EFFECT_TYPES.has(effect.type))
+  )
+}

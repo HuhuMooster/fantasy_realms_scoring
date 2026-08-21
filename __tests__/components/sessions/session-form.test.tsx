@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Suspense } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -117,35 +117,32 @@ describe('SessionForm', () => {
     })
   })
 
-  it('base edition checkbox is disabled', async () => {
+  it('base edition toggle button is disabled', async () => {
     render(<SessionForm />, { wrapper })
-    await waitFor(() => screen.getByText('Base Game'))
-    const baseLabel = screen.getByText('Base Game').closest('label')!
-    const baseCheckbox = within(baseLabel).getByRole('checkbox')
-    expect(baseCheckbox).toBeDisabled()
+    await waitFor(() => screen.getByRole('button', { name: 'Base Game' }))
+    const baseToggle = screen.getByRole('button', { name: 'Base Game' })
+    expect(baseToggle).toBeDisabled()
   })
 
-  it('base edition checkbox is checked by default', async () => {
+  it('base edition toggle button is active by default', async () => {
     render(<SessionForm />, { wrapper })
-    await waitFor(() => screen.getByText('Base Game'))
-    const baseLabel = screen.getByText('Base Game').closest('label')!
-    const baseCheckbox = within(baseLabel).getByRole('checkbox')
-    expect(baseCheckbox).toBeChecked()
+    await waitFor(() => screen.getByRole('button', { name: 'Base Game' }))
+    const baseToggle = screen.getByRole('button', { name: 'Base Game' })
+    expect(baseToggle).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('non-base edition checkbox toggles on click', async () => {
+  it('non-base edition toggle button toggles on click', async () => {
     render(<SessionForm />, { wrapper })
     const user = userEvent.setup()
-    await waitFor(() => screen.getByText('Promo Cards'))
+    await waitFor(() => screen.getByRole('button', { name: 'Promo Cards' }))
 
-    const promoLabel = screen.getByText('Promo Cards').closest('label')!
-    const promoCheckbox = within(promoLabel).getByRole('checkbox')
+    const promoToggle = screen.getByRole('button', { name: 'Promo Cards' })
 
-    expect(promoCheckbox).not.toBeChecked()
-    await user.click(promoCheckbox)
-    expect(promoCheckbox).toBeChecked()
-    await user.click(promoCheckbox)
-    expect(promoCheckbox).not.toBeChecked()
+    expect(promoToggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(promoToggle)
+    expect(promoToggle).toHaveAttribute('aria-pressed', 'true')
+    await user.click(promoToggle)
+    expect(promoToggle).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('calls createSession mutation with trimmed filled nicknames only', async () => {

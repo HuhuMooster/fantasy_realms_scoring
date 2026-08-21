@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 
 import { ActionPanel } from '@/components/calculator/action-panel'
 import { CardPicker } from '@/components/cards/card-picker'
+import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
 import { cardsQueryOptions, editionsQueryOptions } from '@/lib/cards/queries'
 import { calcMaxHand, useCalculatorStore } from '@/lib/stores/calculatorStore'
 import { cn } from '@/lib/utils'
@@ -10,16 +11,22 @@ import { cn } from '@/lib/utils'
 interface IHandSizeIndicatorProps {
   maxSelected: number
   selectedCardCount: number
+  hasCards: boolean
   clearHand: () => void
+  playerCount: number
+  setPlayerCount: (count: number) => void
 }
 
 function HandSizeIndicator({
   maxSelected,
   selectedCardCount,
+  hasCards,
   clearHand,
+  playerCount,
+  setPlayerCount,
 }: IHandSizeIndicatorProps) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-2">
       <span className="text-xs text-base-content/60">
         {'Hand: '}
         {selectedCardCount}
@@ -27,14 +34,27 @@ function HandSizeIndicator({
         {maxSelected}
         {' cards'}
       </span>
-      <button
-        type="button"
-        onClick={clearHand}
-        disabled={selectedCardCount < 1}
-        className="btn btn-xs text-error"
-      >
-        {'Clear hand'}
-      </button>
+      <div className="flex items-center gap-2">
+        <label className="flex items-center gap-1 text-xs text-base-content/60">
+          {'Players'}
+          <input
+            type="number"
+            min={1}
+            max={10}
+            value={playerCount}
+            onChange={(e) => setPlayerCount(Number(e.target.value) || 1)}
+            className="input input-xs w-14"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={clearHand}
+          disabled={!hasCards}
+          className="btn btn-xs text-error"
+        >
+          {'Clear hand'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -44,11 +64,13 @@ export function HandBuilder() {
     activeEditionIds,
     selectedCardIds,
     actionConfigs,
+    playerCount,
     toggleEdition,
     addCard,
     removeCard,
     clearHand,
     setActionConfig,
+    setPlayerCount,
   } = useCalculatorStore()
 
   const { data: editionsData } = useSuspenseQuery(editionsQueryOptions())
@@ -61,13 +83,19 @@ export function HandBuilder() {
     }
   }, [baseEdition, activeEditionIds, toggleEdition])
 
-  const editionId = activeEditionIds.length === 1 ? activeEditionIds[0] : undefined
-
-  const cardsQuery = useQuery(cardsQueryOptions({ editionId }))
+  const cardsQuery = useQuery(cardsQueryOptions({ editionIds: activeEditionIds }))
 
   const allCards = cardsQuery.data ?? []
   const handCards = allCards.filter((c) => selectedCardIds.includes(c.id))
-  const maxSelected = calcMaxHand(handCards.map((c) => c.name))
+  const cursedHoardSuitsActive = editionsData.some(
+    (ed) =>
+      ed.slug === CURSED_HOARD_SUITS_EDITION_SLUG && activeEditionIds.includes(ed.id)
+  )
+  const maxSelected = calcMaxHand(
+    handCards.map((c) => c.name),
+    cursedHoardSuitsActive
+  )
+  const cappedHandCount = handCards.filter((c) => c.suit !== 'cursed-item').length
 
   function handleToggle(id: string) {
     if (selectedCardIds.includes(id)) {
@@ -107,8 +135,11 @@ export function HandBuilder() {
       {/* Hand size indicator */}
       <HandSizeIndicator
         maxSelected={maxSelected}
-        selectedCardCount={selectedCardIds.length}
+        selectedCardCount={cappedHandCount}
+        hasCards={selectedCardIds.length > 0}
         clearHand={clearHand}
+        playerCount={playerCount}
+        setPlayerCount={setPlayerCount}
       />
 
       {/* Card picker */}

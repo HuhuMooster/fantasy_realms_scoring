@@ -11,12 +11,14 @@ import { actionConfigSchema } from '@/lib/validators'
 const calculateScoreInput = z.object({
   cardIds: z.array(z.string()).min(1).max(20),
   actionConfigs: z.record(z.string(), actionConfigSchema).optional(),
+  discardCardIds: z.array(z.string()).max(100).optional(),
+  playerCount: z.number().int().min(1).max(10).optional(),
 })
 
 export const calculateScore = createServerFn({ method: 'POST' })
   .inputValidator(calculateScoreInput)
   .handler(async ({ data }) => {
-    const { cardIds, actionConfigs = {} } = data
+    const { cardIds, actionConfigs = {}, discardCardIds = [], playerCount } = data
 
     // Load all hand cards
     const rows = await db.select().from(cards).where(inArray(cards.id, cardIds))
@@ -38,7 +40,12 @@ export const calculateScore = createServerFn({ method: 'POST' })
 
     const hand = applyActionConfigs(buildHand(rows), rowMap, actionConfigs)
 
-    return scoreHand(hand)
+    const discardRows =
+      discardCardIds.length > 0
+        ? await db.select().from(cards).where(inArray(cards.id, discardCardIds))
+        : []
+
+    return scoreHand(hand, buildHand(discardRows), playerCount)
   })
 
 // Fetch a single card by id (used for validating targets)

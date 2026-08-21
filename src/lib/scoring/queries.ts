@@ -3,12 +3,18 @@ import { queryOptions } from '@tanstack/react-query'
 import { calculateScore } from '@/app/server/scoring'
 import type { TActionConfig } from '@/lib/calculator/actions'
 
+interface IScoreQueryOptions {
+  actionConfigs?: Record<string, TActionConfig>
+  discardCardIds?: string[]
+  playerCount?: number
+}
+
 export const scoreQueryOptions = (
   cardIds: string[],
-  actionConfigs?: Record<string, TActionConfig>
+  options: IScoreQueryOptions = {}
 ) =>
   queryOptions({
-    queryKey: ['score', cardIds, actionConfigs],
-    queryFn: () => calculateScore({ data: { cardIds, actionConfigs } }),
+    queryKey: ['score', cardIds, options],
+    queryFn: () => calculateScore({ data: { cardIds, ...options } }),
     enabled: cardIds.length > 0,
   })

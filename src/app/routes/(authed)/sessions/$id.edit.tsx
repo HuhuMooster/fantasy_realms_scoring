@@ -2,16 +2,19 @@ import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-q
 import { Link, createFileRoute, useRouter } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
 
+import { DiscardPileDialog } from '@/components/calculator/discard-pile-dialog'
 import { ScoreBreakdown } from '@/components/calculator/score-breakdown'
 import { ScoreBreakdownDialog } from '@/components/calculator/score-breakdown-dialog'
 import { PlayerHandForm } from '@/components/sessions/player-hand-form'
+import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
 import type { TActionConfig } from '@/lib/calculator/actions'
-import { cardsQueryOptions } from '@/lib/cards/queries'
+import { cardsQueryOptions, editionsQueryOptions } from '@/lib/cards/queries'
 import type { TScoreResult } from '@/lib/scoring/types'
 import {
   completeSessionMutationOptions,
   sessionQueryOptions,
   sessionsQueryOptions,
+  updateDiscardPileMutationOptions,
 } from '@/lib/sessions/queries'
 import { cn } from '@/lib/utils'
 
@@ -20,10 +23,11 @@ export const Route = createFileRoute('/(authed)/sessions/$id/edit')({
     const session = await context.queryClient.ensureQueryData(
       sessionQueryOptions(params.id)
     )
-    const editionId =
-      session.editionIds.length === 1 ? session.editionIds[0] : undefined
     await Promise.all([
-      context.queryClient.prefetchQuery(cardsQueryOptions({ editionId })),
+      context.queryClient.prefetchQuery(
+        cardsQueryOptions({ editionIds: session.editionIds })
+      ),
+      context.queryClient.prefetchQuery(editionsQueryOptions()),
     ])
   },
   component: EditSessionPage,
@@ -35,9 +39,18 @@ function EditSessionPage() {
   const queryClient = useQueryClient()
   const [activeIdx, setActiveIdx] = useState(0)
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const discardDialogRef = useRef<HTMLDialogElement>(null)
   const [stableResult, setStableResult] = useState<TScoreResult | undefined>(undefined)
 
   const { data: session } = useSuspenseQuery(sessionQueryOptions(id))
+  const { data: cardsData } = useSuspenseQuery(
+    cardsQueryOptions({ editionIds: session.editionIds })
+  )
+  const { data: editionsData } = useSuspenseQuery(editionsQueryOptions())
+  const cursedHoardSuitsActive = editionsData.some(
+    (ed) =>
+      ed.slug === CURSED_HOARD_SUITS_EDITION_SLUG && session.editionIds.includes(ed.id)
+  )
 
   const allHandsSaved =
     session.players.length > 0 && session.players.every((p) => p.finalScore !== null)
@@ -57,6 +70,24 @@ function EditSessionPage() {
   const [actionConfigsByPlayerId, setActionConfigsByPlayerId] = useState<
     Record<string, Record<string, TActionConfig>>
   >({})
+  const [discardCardIds, setDiscardCardIds] = useState<string[]>(session.discardCardIds)
+
+  const updateDiscardMutation = useMutation({
+    ...updateDiscardPileMutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sessionQueryOptions(id).queryKey })
+    },
+  })
+
+  const heldCardIds = Object.values(handsByPlayerId).flat()
+
+  function handleToggleDiscardCard(cardId: string) {
+    const next = discardCardIds.includes(cardId)
+      ? discardCardIds.filter((x) => x !== cardId)
+      : [...discardCardIds, cardId]
+    setDiscardCardIds(next)
+    updateDiscardMutation.mutate({ data: { sessionId: id, cardIds: next } })
+  }
 
   function handleSelectionChange(playerId: string, cardIds: string[]) {
     setHandsByPlayerId((prev) => ({ ...prev, [playerId]: cardIds }))
@@ -82,15 +113,26 @@ function EditSessionPage() {
           {session.name}
         </Link>
 
-        {stableResult && (
-          <button
-            type="button"
-            className="flex lg:hidden btn btn-xs btn-outline btn-primary"
-            onClick={() => dialogRef.current?.showModal()}
-          >
-            {'Show score'}
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {cursedHoardSuitsActive && (
+            <button
+              type="button"
+              className="btn btn-xs btn-outline"
+              onClick={() => discardDialogRef.current?.showModal()}
+            >
+              {'Discard Pile'}
+            </button>
+          )}
+          {stableResult && (
+            <button
+              type="button"
+              className="flex lg:hidden btn btn-xs btn-outline btn-primary"
+              onClick={() => dialogRef.current?.showModal()}
+            >
+              {'Show score'}
+            </button>
+          )}
+        </div>
       </div>
 
       {allHandsSaved && session.status === 'IN_PROGRESS' && (
@@ -148,6 +190,8 @@ function EditSessionPage() {
                   }
                   initialActionConfigs={actionConfigsByPlayerId[activePlayer.id]}
                   excludedCardIds={excludedCardIds}
+                  discardCardIds={discardCardIds}
+                  playerCount={session.players.length}
                   onSelectionChange={(cardIds) =>
                     handleSelectionChange(activePlayer.id, cardIds)
                   }
@@ -172,6 +216,15 @@ function EditSessionPage() {
 
       {/* Mobile: score breakdown dialog */}
       <ScoreBreakdownDialog ref={dialogRef} result={stableResult} />
+
+      {/* Discard pile dialog */}
+      <DiscardPileDialog
+        ref={discardDialogRef}
+        cards={cardsData}
+        discardCardIds={discardCardIds}
+        excludedCardIds={heldCardIds}
+        onToggle={handleToggleDiscardCard}
+      />
     </div>
   )
 }

@@ -11,8 +11,9 @@ import { ActionPanel } from '@/components/calculator/action-panel'
 import { CardPicker } from '@/components/cards/card-picker'
 import { Button } from '@/components/ui/button'
 import { MutationError } from '@/components/ui/mutation-error'
+import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
 import type { TActionConfig } from '@/lib/calculator/actions'
-import { cardsQueryOptions } from '@/lib/cards/queries'
+import { cardsQueryOptions, editionsQueryOptions } from '@/lib/cards/queries'
 import { scoreQueryOptions } from '@/lib/scoring/queries'
 import type { TScoreResult } from '@/lib/scoring/types'
 import { sessionQueryOptions, submitHandMutationOptions } from '@/lib/sessions/queries'
@@ -26,6 +27,8 @@ interface IPlayerHandFormProps {
   initialCardIds: string[]
   initialActionConfigs?: Record<string, TActionConfig>
   excludedCardIds?: string[]
+  discardCardIds?: string[]
+  playerCount?: number
   onSelectionChange?: (cardIds: string[]) => void
   onActionConfigsChange?: (configs: Record<string, TActionConfig>) => void
   onScoreResult?: (result: TScoreResult | undefined) => void
@@ -39,6 +42,8 @@ export function PlayerHandForm({
   initialCardIds,
   initialActionConfigs = {},
   excludedCardIds = [],
+  discardCardIds = [],
+  playerCount,
   onSelectionChange,
   onActionConfigsChange,
   onScoreResult,
@@ -49,14 +54,20 @@ export function PlayerHandForm({
     useState<Record<string, TActionConfig>>(initialActionConfigs)
   const [saved, setSaved] = useState(false)
 
-  const editionId = editionIds.length === 1 ? editionIds[0] : undefined
-  const { data: cards } = useSuspenseQuery(cardsQueryOptions({ editionId }))
+  const { data: cards } = useSuspenseQuery(cardsQueryOptions({ editionIds }))
+  const { data: editionsData } = useSuspenseQuery(editionsQueryOptions())
 
   const handCards = cards.filter((c) => selectedIds.includes(c.id))
-  const maxSelected = calcMaxHand(handCards.map((c) => c.name))
+  const cursedHoardSuitsActive = editionsData.some(
+    (ed) => ed.slug === CURSED_HOARD_SUITS_EDITION_SLUG && editionIds.includes(ed.id)
+  )
+  const maxSelected = calcMaxHand(
+    handCards.map((c) => c.name),
+    cursedHoardSuitsActive
+  )
 
   const scoreQuery = useQuery({
-    ...scoreQueryOptions(selectedIds, actionConfigs),
+    ...scoreQueryOptions(selectedIds, { actionConfigs, discardCardIds, playerCount }),
     placeholderData: keepPreviousData,
   })
 

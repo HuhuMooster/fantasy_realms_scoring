@@ -8,6 +8,7 @@ import { SuitSelect } from '@/components/cards/suit-select'
 import { Input } from '@/components/ui/input'
 import type { cards } from '@/db/schema/cards'
 import { cardsQueryOptions, editionsQueryOptions } from '@/lib/cards/queries'
+import { cn } from '@/lib/utils'
 
 type TCard = typeof cards.$inferSelect
 
@@ -24,17 +25,23 @@ export const Route = createFileRoute('/(authed)/cards/')({
 function CardsPage() {
   const [q, setQ] = useState('')
   const [suit, setSuit] = useState('')
-  const [editionId, setEdition] = useState('')
+  const [editionIds, setEditionIds] = useState<string[]>([])
 
   const { data: editions } = useSuspenseQuery(editionsQueryOptions())
 
   const cardsQuery = useQuery(
     cardsQueryOptions({
-      editionId: editionId || undefined,
+      editionIds: editionIds.length > 0 ? editionIds : undefined,
       suit: suit || undefined,
       q: q || undefined,
     })
   )
+
+  function toggleEdition(id: string) {
+    setEditionIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
 
   return (
     <div className="p-4 max-w-7xl xl:max-w-10/12 mx-auto">
@@ -49,18 +56,25 @@ function CardsPage() {
           />
         </div>
 
-        <select
-          className="select select-bordered select-xs sm:select-md w-full sm:w-auto"
-          value={editionId}
-          onChange={(e) => setEdition(e.target.value)}
-        >
-          <option value="">{'All editions'}</option>
-          {editions.map((ed) => (
-            <option key={ed.id} value={ed.id}>
-              {ed.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          {editions.map((ed) => {
+            const isActive = editionIds.includes(ed.id)
+            return (
+              <button
+                key={ed.id}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => toggleEdition(ed.id)}
+                className={cn(
+                  'btn btn-xs sm:btn-sm',
+                  isActive ? 'btn-primary' : 'btn-outline'
+                )}
+              >
+                {ed.name}
+              </button>
+            )
+          })}
+        </div>
 
         <SuitSelect
           value={suit}
