@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 
 import { ActionPanel } from '@/components/calculator/action-panel'
 import { CardPicker } from '@/components/cards/card-picker'
+import { ScanDialog } from '@/components/recognition/scan-dialog'
 import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
 import { cardsQueryOptions, editionsQueryOptions } from '@/lib/cards/queries'
 import { calcMaxHand, useCalculatorStore } from '@/lib/stores/calculatorStore'
@@ -140,6 +141,16 @@ export function HandBuilder() {
         clearHand={clearHand}
         playerCount={playerCount}
         setPlayerCount={setPlayerCount}
+      />
+
+      {/* Photo scan replaces the hand */}
+      <ScanDialog
+        cards={allCards}
+        editionIds={activeEditionIds}
+        onConfirm={(ids) => {
+          clearHand()
+          ids.forEach(addCard)
+        }}
       />
 
       {/* Card picker */}

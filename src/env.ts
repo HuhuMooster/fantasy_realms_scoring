@@ -9,6 +9,7 @@ export const env = createEnv({
     ADMIN_USERNAME: z.string().min(1),
     ADMIN_PASSWORD: z.string().min(8),
     INITIAL_INVITE_CODE: z.string().length(8),
+    RECOGNIZER_URL: z.url().default('http://localhost:8000'),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -17,5 +18,6 @@ export const env = createEnv({
     ADMIN_USERNAME: process.env.ADMIN_USERNAME,
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
     INITIAL_INVITE_CODE: process.env.INITIAL_INVITE_CODE,
+    RECOGNIZER_URL: process.env.RECOGNIZER_URL,
   },
 })

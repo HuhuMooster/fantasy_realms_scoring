@@ -89,6 +89,22 @@ This will:
 2. Automatically run migrations.
 3. Seed the database (if needed).
 4. Start the application on [http://localhost:3002](http://localhost:3002).
+5. Start the `recognizer` OCR service used by photo scoring.
+
+## Photo Scoring
+
+"Scan photo" (calculator hand, session player hands, discard pile) uploads a photo of the cards. The `recognizer/` service (FastAPI + RapidOCR) returns the text it reads; the app fuzzy-matches those lines against card names of the active editions (`src/lib/recognition/matchCards.ts`). No card images are needed. The user reviews and corrects the detected cards before they are used.
+
+Run it locally for development (the app reads `RECOGNIZER_URL`, default `http://localhost:8000`):
+
+```bash
+cd recognizer
+uv sync
+uv run uvicorn app:app --port 8000
+uv run pytest   # tests
+```
+
+If the recognizer is down, scanning shows an error and manual card entry keeps working.
 
 ## License
 

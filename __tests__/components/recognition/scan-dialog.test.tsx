@@ -1,0 +1,65 @@
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { ScanDialog } from '@/components/recognition/scan-dialog'
+import type { ICard } from '@/types/cards'
+
+const mockRecognize = vi.fn()
+vi.mock('@/app/server/recognition', () => ({
+  recognizeCards: (args: unknown) => mockRecognize(args),
+}))
+
+const CARDS: ICard[] = [
+  { id: 'queen', name: 'Queen', suit: 'leader', basePower: 6 },
+  { id: 'king', name: 'King', suit: 'leader', basePower: 8 },
+  { id: 'unicorn', name: 'Unicorn', suit: 'beast', basePower: 9 },
+]
+
+const photo = new File(['x'], 'hand.jpg', { type: 'image/jpeg' })
+
+beforeEach(() => {
+  mockRecognize.mockReset()
+})
+
+describe('ScanDialog', () => {
+  it('lets the user correct detected cards before confirming', async () => {
+    mockRecognize.mockResolvedValue({
+      matches: [
+        { cardId: 'queen', confidence: 0.9 },
+        { cardId: 'unicorn', confidence: 0.4 },
+      ],
+      unmatched: [],
+    })
+    const onConfirm = vi.fn()
+    const user = userEvent.setup()
+    render(<ScanDialog cards={CARDS} editionIds={['base']} onConfirm={onConfirm} />)
+
+    await user.upload(screen.getByLabelText('Photo of cards'), photo)
+    await screen.findByText('2 selected')
+
+    // misdetected Unicorn removed, missed King added
+    await user.click(screen.getByRole('button', { name: /Unicorn/ }))
+    await user.click(screen.getByRole('button', { name: /King/ }))
+    await user.click(screen.getByRole('button', { name: 'Use these cards' }))
+
+    expect(onConfirm).toHaveBeenCalledWith(['queen', 'king'])
+    expect(screen.queryByRole('button', { name: 'Use these cards' })).toBeNull()
+    const fd = mockRecognize.mock.calls[0][0].data as FormData
+    expect(fd.get('image')).toBe(photo)
+    expect(fd.getAll('editionId')).toEqual(['base'])
+  })
+
+  it('shows why a scan failed', async () => {
+    mockRecognize.mockRejectedValue(new Error('Card recognition is unavailable'))
+    const user = userEvent.setup()
+    render(<ScanDialog cards={CARDS} editionIds={['base']} onConfirm={vi.fn()} />)
+
+    await user.upload(screen.getByLabelText('Photo of cards'), photo)
+
+    expect(
+      await screen.findByText('Card recognition is unavailable')
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Use these cards' })).toBeNull()
+  })
+})
