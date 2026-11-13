@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  MAX_IMAGE_MB,
   actionConfigSchema,
   changePasswordSchema,
   createSessionSchema,
   loginSchema,
+  recognizeCardsSchema,
   registerSchema,
   submitHandSchema,
 } from '@/lib/validators'
@@ -236,5 +238,41 @@ describe('submitHandSchema', () => {
         actionConfigs: { c1: { type: 'bad_type', targetCardId: 'c2' } },
       }).success
     ).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// recognizeCardsSchema
+// ---------------------------------------------------------------------------
+
+describe('recognizeCardsSchema', () => {
+  const form = (image: File | null, editionIds = ['base']) => {
+    const data = new FormData()
+    if (image) data.append('image', image)
+    for (const id of editionIds) data.append('editionId', id)
+    return data
+  }
+  const photo = (type = 'image/jpeg', size = 10) =>
+    new File([new Uint8Array(size)], 'hand.jpg', { type })
+
+  it('parses form data into the image and edition ids', () => {
+    const result = recognizeCardsSchema.parse(form(photo(), ['a', 'b']))
+    expect(result.image).toBeInstanceOf(File)
+    expect(result.editionIds).toEqual(['a', 'b'])
+  })
+
+  it.each([
+    ['a missing image', form(null), 'Missing image'],
+    ['a non-image file', form(photo('application/pdf')), 'File must be an image'],
+    [
+      `an image over ${MAX_IMAGE_MB} MB`,
+      form(photo('image/jpeg', MAX_IMAGE_MB * 1024 * 1024 + 1)),
+      `${MAX_IMAGE_MB} MB or smaller`,
+    ],
+    ['no editions', form(photo(), []), 'Select at least one edition'],
+  ])('rejects %s', (_, data, message) => {
+    const result = recognizeCardsSchema.safeParse(data)
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0].message).toContain(message)
   })
 })

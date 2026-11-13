@@ -50,6 +50,32 @@ describe('ScanDialog', () => {
     expect(fd.getAll('editionId')).toEqual(['base'])
   })
 
+  it('never offers excluded cards, even when the photo shows them', async () => {
+    mockRecognize.mockResolvedValue({
+      matches: [
+        { cardId: 'queen', confidence: 0.9 },
+        { cardId: 'king', confidence: 0.9 },
+      ],
+      unmatched: [],
+    })
+    const onConfirm = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ScanDialog
+        cards={CARDS}
+        editionIds={['base']}
+        excludedIds={['king']}
+        onConfirm={onConfirm}
+      />
+    )
+
+    await user.upload(screen.getByLabelText('Photo of cards'), photo)
+    await screen.findByText('1 selected')
+    await user.click(screen.getByRole('button', { name: 'Use these cards' }))
+
+    expect(onConfirm).toHaveBeenCalledWith(['queen'])
+  })
+
   it('shows why a scan failed', async () => {
     mockRecognize.mockRejectedValue(new Error('Card recognition is unavailable'))
     const user = userEvent.setup()

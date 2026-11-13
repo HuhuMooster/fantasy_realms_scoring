@@ -102,9 +102,8 @@ export function PlayerHandForm({
     setSaved(false)
   }
 
-  // Photo scan replaces the hand; cards held by other players are dropped.
-  function handleScan(ids: string[]) {
-    const next = ids.filter((id) => !excludedCardIds.includes(id))
+  // Photo scan replaces the hand (ScanDialog already drops cards held by other players).
+  function handleScan(next: string[]) {
     setSelectedIds(next)
     onSelectionChange?.(next)
     setActionConfigs((prev) =>
@@ -157,7 +156,12 @@ export function PlayerHandForm({
         {saved ? 'Saved' : `Save ${nickname}'s hand`}
       </Button>
 
-      <ScanDialog cards={cards} editionIds={editionIds} onConfirm={handleScan} />
+      <ScanDialog
+        cards={cards}
+        editionIds={editionIds}
+        excludedIds={excludedCardIds}
+        onConfirm={handleScan}
+      />
 
       {/* Card picker */}
       <CardPicker

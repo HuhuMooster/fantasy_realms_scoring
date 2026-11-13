@@ -64,6 +64,7 @@ export function HandBuilder() {
   const {
     activeEditionIds,
     selectedCardIds,
+    discardCardIds,
     actionConfigs,
     playerCount,
     toggleEdition,
@@ -147,6 +148,7 @@ export function HandBuilder() {
       <ScanDialog
         cards={allCards}
         editionIds={activeEditionIds}
+        excludedIds={discardCardIds}
         onConfirm={(ids) => {
           clearHand()
           ids.forEach(addCard)
@@ -162,6 +164,7 @@ export function HandBuilder() {
           selectedIds={selectedCardIds}
           onToggle={handleToggle}
           maxSelected={maxSelected}
+          excludedIds={discardCardIds}
           compact
         />
       ) : null}

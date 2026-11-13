@@ -40,13 +40,8 @@ export const DiscardPileDialog = forwardRef<HTMLDialogElement, IProps>(
           <ScanDialog
             cards={cards}
             editionIds={editionIds}
-            onConfirm={(ids) =>
-              onScan(
-                ids.filter(
-                  (id) => !discardCardIds.includes(id) && !excludedCardIds.includes(id)
-                )
-              )
-            }
+            excludedIds={[...discardCardIds, ...excludedCardIds]}
+            onConfirm={onScan}
           />
           <CardPicker
             cards={cards}

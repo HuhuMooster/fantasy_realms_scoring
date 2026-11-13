@@ -7,12 +7,14 @@ import type { ICard } from '@/types/cards'
 interface IProps {
   cards: ICard[]
   editionIds: string[]
+  // cards that can't be used here (held by another player, already discarded): never offered
+  excludedIds?: string[]
   onConfirm: (cardIds: string[]) => void
 }
 
 // Upload/capture a photo, show detected cards for review, confirm the corrected list.
-export function ScanDialog({ cards, editionIds, onConfirm }: IProps) {
-  const [ids, setIds] = useState<string[] | null>(null)
+export function ScanDialog({ cards, editionIds, excludedIds = [], onConfirm }: IProps) {
+  const [reviewIds, setReviewIds] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -24,7 +26,9 @@ export function ScanDialog({ cards, editionIds, onConfirm }: IProps) {
     setError('')
     try {
       const result = await recognizeCards({ data })
-      setIds(result.matches.map((m) => m.cardId))
+      setReviewIds(
+        result.matches.map((m) => m.cardId).filter((id) => !excludedIds.includes(id))
+      )
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Scan failed')
     } finally {
@@ -33,7 +37,9 @@ export function ScanDialog({ cards, editionIds, onConfirm }: IProps) {
   }
 
   const toggle = (id: string) =>
-    setIds((s) => (s?.includes(id) ? s.filter((x) => x !== id) : [...(s ?? []), id]))
+    setReviewIds((s) =>
+      s?.includes(id) ? s.filter((x) => x !== id) : [...(s ?? []), id]
+    )
 
   return (
     <details className="collapse collapse-arrow bg-base-200">
@@ -55,15 +61,21 @@ export function ScanDialog({ cards, editionIds, onConfirm }: IProps) {
         </label>
         {busy && <span className="loading loading-spinner" aria-label="Scanning" />}
         {error && <p className="text-error text-sm">{error}</p>}
-        {ids && (
+        {reviewIds && (
           <>
-            <CardPicker cards={cards} selectedIds={ids} onToggle={toggle} compact />
+            <CardPicker
+              cards={cards}
+              selectedIds={reviewIds}
+              onToggle={toggle}
+              excludedIds={excludedIds}
+              compact
+            />
             <button
               type="button"
               className="btn btn-primary"
               onClick={() => {
-                onConfirm(ids)
-                setIds(null)
+                onConfirm(reviewIds)
+                setReviewIds(null)
               }}
             >
               {'Use these cards'}

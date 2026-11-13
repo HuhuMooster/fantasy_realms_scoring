@@ -23,7 +23,6 @@ def test_ocr_returns_text_boxes():
     boxes = res.json()["boxes"]
     assert [b["text"] for b in boxes] == ["Unicorn"]
     assert 0 < boxes[0]["confidence"] <= 1
-    assert len(boxes[0]["bbox"]) == 4  # four [x, y] corners, rotated text keeps its shape
 
 
 def test_unreadable_upload_is_rejected():

@@ -96,3 +96,23 @@ export const createSessionFormSchema = z.object({
     .array(z.string())
     .refine((arr) => arr.some((n) => n.trim().length > 0), 'Add at least one player'),
 })
+
+export const MAX_IMAGE_MB = 20
+
+// Client sends FormData: `image` (File) + one `editionId` per active edition.
+export const recognizeCardsSchema = z.preprocess(
+  (data) =>
+    data instanceof FormData
+      ? { image: data.get('image'), editionIds: data.getAll('editionId') }
+      : data,
+  z.object({
+    image: z
+      .instanceof(File, { message: 'Missing image' })
+      .refine((f) => f.type.startsWith('image/'), 'File must be an image')
+      .refine(
+        (f) => f.size <= MAX_IMAGE_MB * 1024 * 1024,
+        `Image must be ${MAX_IMAGE_MB} MB or smaller`
+      ),
+    editionIds: z.array(z.string()).min(1, 'Select at least one edition'),
+  })
+)
