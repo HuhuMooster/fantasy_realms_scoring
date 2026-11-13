@@ -31,3 +31,10 @@ CLAUDE.*
 /blob-report/
 /playwright/.cache/
 .tanstack
+# recognizer (python)
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Photos for the OCR test; only the generated .json is committed
+recognizer/fixtures/*.jpg

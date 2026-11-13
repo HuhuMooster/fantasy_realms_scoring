@@ -1,17 +1,21 @@
 import { forwardRef } from 'react'
 
 import { CardPicker } from '@/components/cards/card-picker'
+import { ScanDialog } from '@/components/recognition/scan-dialog'
 import type { ICard } from '@/types/cards'
 
 interface IProps {
   cards: ICard[]
+  editionIds: string[]
   discardCardIds: string[]
   excludedCardIds: string[]
   onToggle: (cardId: string) => void
+  // receives scanned ids not already discarded and not held in a hand
+  onScan: (cardIds: string[]) => void
 }
 
 export const DiscardPileDialog = forwardRef<HTMLDialogElement, IProps>(
-  ({ cards, discardCardIds, excludedCardIds, onToggle }, ref) => {
+  ({ cards, editionIds, discardCardIds, excludedCardIds, onToggle, onScan }, ref) => {
     function close() {
       if (!ref || typeof ref === 'function') return
       ref.current?.close()
@@ -33,6 +37,12 @@ export const DiscardPileDialog = forwardRef<HTMLDialogElement, IProps>(
           <p className="text-xs text-base-content/60 mb-2">
             {"Cards already in a player's hand can't be discarded."}
           </p>
+          <ScanDialog
+            cards={cards}
+            editionIds={editionIds}
+            excludedIds={[...discardCardIds, ...excludedCardIds]}
+            onConfirm={onScan}
+          />
           <CardPicker
             cards={cards}
             selectedIds={discardCardIds}

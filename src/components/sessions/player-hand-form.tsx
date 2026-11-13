@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 
 import { ActionPanel } from '@/components/calculator/action-panel'
 import { CardPicker } from '@/components/cards/card-picker'
+import { ScanDialog } from '@/components/recognition/scan-dialog'
 import { Button } from '@/components/ui/button'
 import { MutationError } from '@/components/ui/mutation-error'
 import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
@@ -101,6 +102,16 @@ export function PlayerHandForm({
     setSaved(false)
   }
 
+  // Photo scan replaces the hand (ScanDialog already drops cards held by other players).
+  function handleScan(next: string[]) {
+    setSelectedIds(next)
+    onSelectionChange?.(next)
+    setActionConfigs((prev) =>
+      Object.fromEntries(Object.entries(prev).filter(([id]) => next.includes(id)))
+    )
+    setSaved(false)
+  }
+
   function handleSetActionConfig(cardId: string, config: TActionConfig | null) {
     setActionConfigs((prev) => {
       const next = { ...prev }
@@ -144,6 +155,19 @@ export function PlayerHandForm({
       >
         {saved ? 'Saved' : `Save ${nickname}'s hand`}
       </Button>
+
+      <ScanDialog
+        cards={cards}
+        editionIds={editionIds}
+        excludedIds={excludedCardIds}
+        maxCards={(scanned) =>
+          calcMaxHand(
+            scanned.map((c) => c.name),
+            cursedHoardSuitsActive
+          )
+        }
+        onConfirm={handleScan}
+      />
 
       {/* Card picker */}
       <CardPicker

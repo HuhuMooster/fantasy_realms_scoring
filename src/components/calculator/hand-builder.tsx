@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 
 import { ActionPanel } from '@/components/calculator/action-panel'
 import { CardPicker } from '@/components/cards/card-picker'
+import { ScanDialog } from '@/components/recognition/scan-dialog'
 import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
 import { cardsQueryOptions, editionsQueryOptions } from '@/lib/cards/queries'
 import { calcMaxHand, useCalculatorStore } from '@/lib/stores/calculatorStore'
@@ -63,6 +64,7 @@ export function HandBuilder() {
   const {
     activeEditionIds,
     selectedCardIds,
+    discardCardIds,
     actionConfigs,
     playerCount,
     toggleEdition,
@@ -142,6 +144,23 @@ export function HandBuilder() {
         setPlayerCount={setPlayerCount}
       />
 
+      {/* Photo scan replaces the hand */}
+      <ScanDialog
+        cards={allCards}
+        editionIds={activeEditionIds}
+        excludedIds={discardCardIds}
+        maxCards={(scanned) =>
+          calcMaxHand(
+            scanned.map((c) => c.name),
+            cursedHoardSuitsActive
+          )
+        }
+        onConfirm={(ids) => {
+          clearHand()
+          ids.forEach(addCard)
+        }}
+      />
+
       {/* Card picker */}
       {cardsQuery.isPending ? (
         <span className="loading loading-spinner" />
@@ -151,6 +170,7 @@ export function HandBuilder() {
           selectedIds={selectedCardIds}
           onToggle={handleToggle}
           maxSelected={maxSelected}
+          excludedIds={discardCardIds}
           compact
         />
       ) : null}

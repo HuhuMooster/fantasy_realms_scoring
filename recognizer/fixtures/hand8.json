@@ -1,0 +1,198 @@
+[
+ {
+  "text": "10",
+  "confidence": 0.999
+ },
+ {
+  "text": "11",
+  "confidence": 1.0
+ },
+ {
+  "text": "ARMY",
+  "confidence": 1.0
+ },
+ {
+  "text": "13",
+  "confidence": 1.0
+ },
+ {
+  "text": "17",
+  "confidence": 1.0
+ },
+ {
+  "text": "LAND",
+  "confidence": 0.88
+ },
+ {
+  "text": "WEATHER",
+  "confidence": 1.0
+ },
+ {
+  "text": "ARMY",
+  "confidence": 1.0
+ },
+ {
+  "text": "F",
+  "confidence": 0.717
+ },
+ {
+  "text": "I",
+  "confidence": 0.516
+ },
+ {
+  "text": "ELVEN ARCHERS",
+  "confidence": 0.998
+ },
+ {
+  "text": "GARDEN",
+  "confidence": 1.0
+ },
+ {
+  "text": "WHIRLWIND",
+  "confidence": 1.0
+ },
+ {
+  "text": "LIGHT CAVALRY",
+  "confidence": 1.0
+ },
+ {
+  "text": "BONUS: +5 With no WEATHER",
+  "confidence": 0.962
+ },
+ {
+  "text": "BONUS: +11 for each",
+  "confidence": 0.964
+ },
+ {
+  "text": "LEADER and BEAST",
+  "confidence": 0.977
+ },
+ {
+  "text": "PENALTY: BLANKED",
+  "confidence": 0.997
+ },
+ {
+  "text": "BONUS: +40 with both",
+  "confidence": 0.982
+ },
+ {
+  "text": "by any UNDEAD",
+  "confidence": 0.989
+ },
+ {
+  "text": "Rainstorm and either",
+  "confidence": 0.999
+ },
+ {
+  "text": "PENALTY: -2 for each LAND.",
+  "confidence": 0.957
+ },
+ {
+  "text": "Necromancer or Demon.",
+  "confidence": 0.964
+ },
+ {
+  "text": "22",
+  "confidence": 1.0
+ },
+ {
+  "text": "Blizzard or Great Flood.",
+  "confidence": 0.998
+ },
+ {
+  "text": "56",
+  "confidence": 0.992
+ },
+ {
+  "text": "23",
+  "confidence": 1.0
+ },
+ {
+  "text": "27",
+  "confidence": 1.0
+ },
+ {
+  "text": "FLAME",
+  "confidence": 0.999
+ },
+ {
+  "text": "LEADER",
+  "confidence": 1.0
+ },
+ {
+  "text": "WEATHER",
+  "confidence": 1.0
+ },
+ {
+  "text": "LAND",
+  "confidence": 0.896
+ },
+ {
+  "text": "FIRE ELEMENTAL",
+  "confidence": 1.0
+ },
+ {
+  "text": "QUEEN",
+  "confidence": 1.0
+ },
+ {
+  "text": "SMOKE",
+  "confidence": 1.0
+ },
+ {
+  "text": "MOUNTAIN",
+  "confidence": 1.0
+ },
+ {
+  "text": "BONUS: +5 for each ARMY.",
+  "confidence": 0.941
+ },
+ {
+  "text": "BONUS: +50 with both",
+  "confidence": 0.976
+ },
+ {
+  "text": "BONUS: +15 for each",
+  "confidence": 0.969
+ },
+ {
+  "text": "PENALTY: This card is BLANKED",
+  "confidence": 0.991
+ },
+ {
+  "text": "other FLAME.",
+  "confidence": 0.941
+ },
+ {
+  "text": "If with King, +20 for each ARMY.",
+  "confidence": 0.993
+ },
+ {
+  "text": "-OR-",
+  "confidence": 0.966
+ },
+ {
+  "text": "Smoke and Wildfire.",
+  "confidence": 0.985
+ },
+ {
+  "text": "CLEARS the Penalty",
+  "confidence": 0.978
+ },
+ {
+  "text": "unless with at least one FLAME.",
+  "confidence": 0.985
+ },
+ {
+  "text": "on all FLOODS",
+  "confidence": 0.984
+ },
+ {
+  "text": "20",
+  "confidence": 0.999
+ },
+ {
+  "text": "33",
+  "confidence": 1.0
+ }
+]

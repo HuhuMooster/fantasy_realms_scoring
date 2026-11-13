@@ -1,0 +1,386 @@
+[
+ {
+  "text": "12",
+  "confidence": 1.0
+ },
+ {
+  "text": "21",
+  "confidence": 1.0
+ },
+ {
+  "text": "2",
+  "confidence": 0.539
+ },
+ {
+  "text": "30",
+  "confidence": 0.999
+ },
+ {
+  "text": "UNDEAD",
+  "confidence": 1.0
+ },
+ {
+  "text": "BUILDING",
+  "confidence": 0.999
+ },
+ {
+  "text": "FLAME",
+  "confidence": 1.0
+ },
+ {
+  "text": "WIZARD",
+  "confidence": 1.0
+ },
+ {
+  "text": "BEAST",
+  "confidence": 1.0
+ },
+ {
+  "text": "NECROMANCER",
+  "confidence": 1.0
+ },
+ {
+  "text": "SPECTER",
+  "confidence": 1.0
+ },
+ {
+  "text": "CRYPT",
+  "confidence": 1.0
+ },
+ {
+  "text": "DRAGON",
+  "confidence": 1.0
+ },
+ {
+  "text": "CANDLE",
+  "confidence": 1.0
+ },
+ {
+  "text": "BONUS: At the end of the game,",
+  "confidence": 0.987
+ },
+ {
+  "text": "you may take one ARMY",
+  "confidence": 0.999
+ },
+ {
+  "text": "WIZARD, BEAST",
+  "confidence": 0.968
+ },
+ {
+  "text": "ARTIFACT, and OUTSIDER",
+  "confidence": 0.956
+ },
+ {
+  "text": "BONUS: +6 for each WIZARD",
+  "confidence": 0.962
+ },
+ {
+  "text": "strengths of all UNDEAD",
+  "confidence": 0.988
+ },
+ {
+  "text": "BONUS: The sum of the base",
+  "confidence": 0.949
+ },
+ {
+  "text": "BONUS: +100 with Book",
+  "confidence": 0.986
+ },
+ {
+  "text": "of Changes, Bell Tower,",
+  "confidence": 0.986
+ },
+ {
+  "text": "or UNDEAD",
+  "confidence": 0.998
+ },
+ {
+  "text": "LEADER",
+  "confidence": 0.998
+ },
+ {
+  "text": "area and add it to your hand.",
+  "confidence": 0.983
+ },
+ {
+  "text": "from the discard",
+  "confidence": 0.983
+ },
+ {
+  "text": "PENALTY: -40 unless with",
+  "confidence": 0.945
+ },
+ {
+  "text": "at least one WIZARD",
+  "confidence": 0.997
+ },
+ {
+  "text": "in the discard area.",
+  "confidence": 0.973
+ },
+ {
+  "text": "PENALTY: BLANKS all LEADERS",
+  "confidence": 0.971
+ },
+ {
+  "text": "and any WIZARD",
+  "confidence": 0.999
+ },
+ {
+  "text": "UNDEAD  may not be BLANKED.",
+  "confidence": 0.96
+ },
+ {
+  "text": "28",
+  "confidence": 0.996
+ },
+ {
+  "text": "60",
+  "confidence": 0.987
+ },
+ {
+  "text": "71",
+  "confidence": 0.972
+ },
+ {
+  "text": "32",
+  "confidence": 1.0
+ },
+ {
+  "text": "WIZARD",
+  "confidence": 1.0
+ },
+ {
+  "text": "FLOOD",
+  "confidence": 0.999
+ },
+ {
+  "text": "5",
+  "confidence": 1.0
+ },
+ {
+  "text": "ARTIFACT",
+  "confidence": 1.0
+ },
+ {
+  "text": "10",
+  "confidence": 0.997
+ },
+ {
+  "text": "ARMY",
+  "confidence": 1.0
+ },
+ {
+  "text": "ILDING",
+  "confidence": 1.0
+ },
+ {
+  "text": "GREAT FLOOD",
+  "confidence": 0.999
+ },
+ {
+  "text": "WORLD TREE",
+  "confidence": 0.997
+ },
+ {
+  "text": "BEASTMASTER",
+  "confidence": 1.0
+ },
+ {
+  "text": "CASTLE",
+  "confidence": 1.0
+ },
+ {
+  "text": "PENALTY: BLANKS alI ARMIES",
+  "confidence": 0.987
+ },
+ {
+  "text": "RANGERS",
+  "confidence": 1.0
+ },
+ {
+  "text": "BONUS: +9 for each BEAST.",
+  "confidence": 0.942
+ },
+ {
+  "text": "all BUILDINGS all LANDS",
+  "confidence": 0.927
+ },
+ {
+  "text": "BONUS: +70 if every non-",
+  "confidence": 0.972
+ },
+ {
+  "text": "BONUS: +10 each for the first",
+  "confidence": 0.979
+ },
+ {
+  "text": "CLEARS the Penalty",
+  "confidence": 1.0
+ },
+ {
+  "text": "except Mountain, and all",
+  "confidence": 0.993
+ },
+ {
+  "text": "BONUS: +10 for each",
+  "confidence": 0.967
+ },
+ {
+  "text": "BLANKED card is a different suit.",
+  "confidence": 0.968
+ },
+ {
+  "text": "LEADER",
+  "confidence": 0.999
+ },
+ {
+  "text": "ARMY,LAND, and",
+  "confidence": 0.934
+ },
+ {
+  "text": "on all",
+  "confidence": 0.983
+ },
+ {
+  "text": "BEASTS",
+  "confidence": 1.0
+ },
+ {
+  "text": "FLAMES",
+  "confidence": 1.0
+ },
+ {
+  "text": "except Lightning.",
+  "confidence": 0.986
+ },
+ {
+  "text": "LAND or",
+  "confidence": 0.94
+ },
+ {
+  "text": "BUILDING",
+  "confidence": 1.0
+ },
+ {
+  "text": "other BUILDING",
+  "confidence": 0.991
+ },
+ {
+  "text": "CLEARS the word ARMY from all",
+  "confidence": 0.966
+ },
+ {
+  "text": "+5 for each additional",
+  "confidence": 0.992
+ },
+ {
+  "text": "Penalties (except War Dirigible).",
+  "confidence": 0.986
+ },
+ {
+  "text": "BUILDING",
+  "confidence": 1.0
+ },
+ {
+  "text": "58",
+  "confidence": 0.985
+ },
+ {
+  "text": "25",
+  "confidence": 1.0
+ },
+ {
+  "text": "3",
+  "confidence": 1.0
+ },
+ {
+  "text": "ARTIFACT",
+  "confidence": 1.0
+ },
+ {
+  "text": "22",
+  "confidence": 0.617
+ },
+ {
+  "text": "12",
+  "confidence": 1.0
+ },
+ {
+  "text": "LAND",
+  "confidence": 0.999
+ },
+ {
+  "text": "BEAST",
+  "confidence": 1.0
+ },
+ {
+  "text": "BEAST",
+  "confidence": 0.991
+ },
+ {
+  "text": "BOOK OF CHANGES",
+  "confidence": 0.999
+ },
+ {
+  "text": "EARTH ELEMENTAL",
+  "confidence": 0.998
+ },
+ {
+  "text": "BONUS: You may change",
+  "confidence": 0.985
+ },
+ {
+  "text": "UNICORN",
+  "confidence": 1.0
+ },
+ {
+  "text": "HYDRA",
+  "confidence": 1.0
+ },
+ {
+  "text": "the suit of one other card.",
+  "confidence": 0.992
+ },
+ {
+  "text": "BONUS: +15 for each",
+  "confidence": 0.983
+ },
+ {
+  "text": "Its name, Bonuses, and",
+  "confidence": 0.98
+ },
+ {
+  "text": "BONUS: +30 with Princess.",
+  "confidence": 0.981
+ },
+ {
+  "text": "other LAND",
+  "confidence": 0.968
+ },
+ {
+  "text": "Penalties remain the same.",
+  "confidence": 0.997
+ },
+ {
+  "text": "-OR-",
+  "confidence": 0.993
+ },
+ {
+  "text": "BONUS: +28 with Swamp.",
+  "confidence": 0.986
+ },
+ {
+  "text": "+15 with Empress, Queen",
+  "confidence": 0.982
+ },
+ {
+  "text": "or Enchantress.",
+  "confidence": 0.997
+ },
+ {
+  "text": "15",
+  "confidence": 1.0
+ }
+]

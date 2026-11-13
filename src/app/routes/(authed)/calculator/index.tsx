@@ -120,9 +120,11 @@ function CalculatorPage() {
       <DiscardPileDialog
         ref={discardDialogRef}
         cards={allCards}
+        editionIds={activeEditionIds}
         discardCardIds={discardCardIds}
         excludedCardIds={selectedCardIds}
         onToggle={toggleDiscardCard}
+        onScan={(ids) => ids.forEach(toggleDiscardCard)}
       />
     </div>
   )

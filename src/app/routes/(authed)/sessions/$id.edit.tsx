@@ -89,6 +89,13 @@ function EditSessionPage() {
     updateDiscardMutation.mutate({ data: { sessionId: id, cardIds: next } })
   }
 
+  // one save for the whole scan (per-card toggles would race on stale state)
+  function handleScanDiscard(cardIds: string[]) {
+    const next = [...discardCardIds, ...cardIds]
+    setDiscardCardIds(next)
+    updateDiscardMutation.mutate({ data: { sessionId: id, cardIds: next } })
+  }
+
   function handleSelectionChange(playerId: string, cardIds: string[]) {
     setHandsByPlayerId((prev) => ({ ...prev, [playerId]: cardIds }))
   }
@@ -221,9 +228,11 @@ function EditSessionPage() {
       <DiscardPileDialog
         ref={discardDialogRef}
         cards={cardsData}
+        editionIds={session.editionIds}
         discardCardIds={discardCardIds}
         excludedCardIds={heldCardIds}
         onToggle={handleToggleDiscardCard}
+        onScan={handleScanDiscard}
       />
     </div>
   )

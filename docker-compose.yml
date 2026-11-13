@@ -53,6 +53,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD-changeme123}
       INITIAL_INVITE_CODE: ${INITIAL_INVITE_CODE-AAAABBBB}
       NODE_ENV: production
+      RECOGNIZER_URL: http://recognizer:8000
     ports:
       - 3002:3002
     depends_on:
@@ -60,6 +61,13 @@ services:
         condition: service_healthy
       migrator:
         condition: service_completed_successfully
+
+  # OCR sidecar for photo scoring; internal only. If it is down, manual entry still works.
+  recognizer:
+    build: ./recognizer
+    restart: unless-stopped
+    networks:
+      - fantasy_realms_net
 
 volumes:
   pgdata:
