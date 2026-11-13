@@ -160,6 +160,12 @@ export function PlayerHandForm({
         cards={cards}
         editionIds={editionIds}
         excludedIds={excludedCardIds}
+        maxCards={(scanned) =>
+          calcMaxHand(
+            scanned.map((c) => c.name),
+            cursedHoardSuitsActive
+          )
+        }
         onConfirm={handleScan}
       />
 

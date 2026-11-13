@@ -149,6 +149,12 @@ export function HandBuilder() {
         cards={allCards}
         editionIds={activeEditionIds}
         excludedIds={discardCardIds}
+        maxCards={(scanned) =>
+          calcMaxHand(
+            scanned.map((c) => c.name),
+            cursedHoardSuitsActive
+          )
+        }
         onConfirm={(ids) => {
           clearHand()
           ids.forEach(addCard)

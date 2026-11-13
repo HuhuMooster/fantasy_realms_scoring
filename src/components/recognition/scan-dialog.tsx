@@ -9,14 +9,30 @@ interface IProps {
   editionIds: string[]
   // cards that can't be used here (held by another player, already discarded): never offered
   excludedIds?: string[]
+  // hand limit for the reviewed cards (it can depend on them); omit for the discard pile
+  maxCards?: (cards: ICard[]) => number
   onConfirm: (cardIds: string[]) => void
 }
 
 // Upload/capture a photo, show detected cards for review, confirm the corrected list.
-export function ScanDialog({ cards, editionIds, excludedIds = [], onConfirm }: IProps) {
+export function ScanDialog({
+  cards,
+  editionIds,
+  excludedIds = [],
+  maxCards,
+  onConfirm,
+}: IProps) {
   const [reviewIds, setReviewIds] = useState<string[] | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  const reviewCards = cards.filter((c) => reviewIds?.includes(c.id))
+  const max = maxCards?.(reviewCards)
+  // Cursed Items don't count towards the hand limit, same as CardPicker
+  const tooMany =
+    max === undefined
+      ? 0
+      : reviewCards.filter((c) => c.suit !== 'cursed-item').length - max
 
   async function scan(file: File) {
     const data = new FormData()
@@ -68,11 +84,18 @@ export function ScanDialog({ cards, editionIds, excludedIds = [], onConfirm }: I
               selectedIds={reviewIds}
               onToggle={toggle}
               excludedIds={excludedIds}
+              maxSelected={max}
               compact
             />
+            {tooMany > 0 && (
+              <p className="text-warning text-sm">
+                {`Hand limit is ${max} cards, remove ${tooMany}.`}
+              </p>
+            )}
             <button
               type="button"
               className="btn btn-primary"
+              disabled={tooMany > 0}
               onClick={() => {
                 onConfirm(reviewIds)
                 setReviewIds(null)

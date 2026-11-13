@@ -38,6 +38,13 @@ describe('matchCards', () => {
     expect(result.unmatched).toEqual(['7'])
   })
 
+  it('matches an edition variant by the name printed on the card', () => {
+    const cards = [{ id: 'ch-bell', name: 'Bell Tower (Cursed Hoard)' }]
+    expect(matchCards([box('BELL TOWER', 1)], cards).matches).toEqual([
+      { cardId: 'ch-bell', confidence: 1 },
+    ])
+  })
+
   it('reports a card read twice once, with the higher confidence', () => {
     const { matches } = matchCards([box('KING', 0.5), box('KING', 0.9)], cards)
     expect(matches).toEqual([{ cardId: 'king', confidence: 0.9 }])

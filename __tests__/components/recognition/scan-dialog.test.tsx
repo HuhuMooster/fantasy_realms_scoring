@@ -76,6 +76,33 @@ describe('ScanDialog', () => {
     expect(onConfirm).toHaveBeenCalledWith(['queen'])
   })
 
+  it('blocks confirming more cards than the hand limit until some are removed', async () => {
+    mockRecognize.mockResolvedValue({
+      matches: CARDS.map((c) => ({ cardId: c.id, confidence: 0.9 })),
+      unmatched: [],
+    })
+    const onConfirm = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ScanDialog
+        cards={CARDS}
+        editionIds={['base']}
+        maxCards={() => 2}
+        onConfirm={onConfirm}
+      />
+    )
+
+    await user.upload(screen.getByLabelText('Photo of cards'), photo)
+    await screen.findByText('Hand limit is 2 cards, remove 1.')
+    const confirm = screen.getByRole('button', { name: 'Use these cards' })
+    expect(confirm).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: /Unicorn/ }))
+    expect(screen.queryByText(/Hand limit/)).toBeNull()
+    await user.click(confirm)
+    expect(onConfirm).toHaveBeenCalledWith(['queen', 'king'])
+  })
+
   it('shows why a scan failed', async () => {
     mockRecognize.mockRejectedValue(new Error('Card recognition is unavailable'))
     const user = userEvent.setup()

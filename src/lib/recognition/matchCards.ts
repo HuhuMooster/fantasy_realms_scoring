@@ -9,6 +9,8 @@ const MIN_SIMILARITY = 0.7
 const JOINED_MIN_SIMILARITY = 0.9
 
 const normalize = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ')
+// Edition variants are stored as e.g. "Bell Tower (Cursed Hoard)" but the card only prints "BELL TOWER"
+const printedName = (name: string) => normalize(name.replace(/\s*\([^)]*\)$/, ''))
 
 function levenshtein(a: string, b: string) {
   let prev = Array.from({ length: b.length + 1 }, (_, j) => j)
@@ -42,7 +44,7 @@ export function matchCards(boxes: TOcrBox[], cards: TNamedCard[]) {
     const text = normalize(raw)
     let best: { card: TNamedCard; score: number } | undefined
     for (const card of cards) {
-      const score = similarity(text, normalize(card.name))
+      const score = similarity(text, printedName(card.name))
       if (!best || score > best.score) best = { card, score }
     }
     return best && best.score >= minSimilarity ? best : undefined

@@ -4,6 +4,7 @@ import { inArray } from 'drizzle-orm'
 import { userRateLimit } from '@/app/server/_rateLimit'
 import { db } from '@/db/db'
 import { cards } from '@/db/schema/cards'
+import { dropReplacedCards } from '@/lib/calculator/actions'
 import { recognizeImage } from '@/lib/recognition/recognize'
 import { recognizeCardsSchema } from '@/lib/validators'
 
@@ -15,5 +16,6 @@ export const recognizeCards = createServerFn({ method: 'POST' })
       .select({ id: cards.id, name: cards.name })
       .from(cards)
       .where(inArray(cards.editionId, data.editionIds))
-    return recognizeImage(data.image, candidates)
+    // with Cursed Hoard active only its "Bell Tower (Cursed Hoard)" etc. can match, not the base card
+    return recognizeImage(data.image, dropReplacedCards(candidates))
   })
