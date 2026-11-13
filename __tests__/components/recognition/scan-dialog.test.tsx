@@ -20,6 +20,13 @@ const photo = new File(['x'], 'hand.jpg', { type: 'image/jpeg' })
 
 beforeEach(() => {
   mockRecognize.mockReset()
+  // jsdom has no showModal/close
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute('open', '')
+  }
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute('open')
+  }
 })
 
 describe('ScanDialog', () => {
