@@ -94,3 +94,11 @@ export type TAngelConfig = {
 
 export type TActionConfig =
   TImpersonateConfig | TBookOfChangesConfig | TIslandConfig | TAngelConfig
+
+// Cursed Hoard replacement cards (e.g. 'Bell Tower (Cursed Hoard)') supersede
+// their base-game namesakes, so drop a base card when its replacement is present.
+const CH_SUFFIX = ' (Cursed Hoard)'
+export function dropReplacedCards<T extends { name: string }>(cardList: T[]): T[] {
+  const names = new Set(cardList.map((c) => c.name))
+  return cardList.filter((c) => !names.has(c.name + CH_SUFFIX))
+}

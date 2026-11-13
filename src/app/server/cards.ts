@@ -6,6 +6,7 @@ import type { TSuit } from '@/components/cards/suit-badge'
 import { db } from '@/db/db'
 import { cards } from '@/db/schema/cards'
 import { editions } from '@/db/schema/editions'
+import { dropReplacedCards } from '@/lib/calculator/actions'
 import { cardFiltersSchema } from '@/lib/validators'
 
 export const getCards = createServerFn({ method: 'GET' })
@@ -26,7 +27,9 @@ export const getCards = createServerFn({ method: 'GET' })
       .where(conditions.length ? and(...conditions) : undefined)
       .orderBy(cards.suit, cards.name)
 
-    return rows.map((row) => ({
+    // Unfiltered catalog shows every card; an edition selection hides replaced base cards.
+    const visible = data.editionIds ? dropReplacedCards(rows) : rows
+    return visible.map((row) => ({
       ...row,
       bonusRule: row.bonusRule as object,
       suit: row.suit as TSuit,
