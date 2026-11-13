@@ -27,7 +27,7 @@ function RouteComponent() {
     <ThemeProvider>
       <div className="drawer">
         <input id="app-drawer" type="checkbox" className="drawer-toggle" />
-        <div className="drawer-content flex flex-col min-h-screen">
+        <div className="drawer-content flex flex-col min-h-dvh">
           <Navbar user={user} />
           <main className="flex-1">
             <Outlet />

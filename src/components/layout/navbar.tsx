@@ -15,7 +15,7 @@ export function Navbar({ user }: INavbarProps) {
   const { logout, isPending } = useLogout()
 
   return (
-    <nav className="navbar sticky top-0 z-30 bg-base-100 shadow-sm min-h-14 px-4">
+    <nav className="navbar sticky top-0 z-30 bg-base-100 shadow-sm h-14 min-h-14 px-4">
       {/* Hamburger - mobile only */}
       <div className="sm:hidden mr-1">
         <label

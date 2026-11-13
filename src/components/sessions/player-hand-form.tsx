@@ -126,7 +126,7 @@ export function PlayerHandForm({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 flex-1 min-h-0">
       {/* Live score */}
       <div className="flex items-center justify-between">
         <span className="text-sm text-base-content/60">
@@ -177,7 +177,8 @@ export function PlayerHandForm({
         maxSelected={maxSelected}
         compact
         excludedIds={excludedCardIds}
-        listClassName="max-h-[33dvh] lg:max-h-[45dvh]"
+        fill
+        listClassName="lg:max-h-[45dvh]"
       />
 
       {/* Action card configuration */}

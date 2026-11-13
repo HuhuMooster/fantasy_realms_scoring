@@ -108,7 +108,7 @@ export function HandBuilder() {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 flex-1 min-h-0">
       {/* Edition toggles */}
       {editionsData.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -172,6 +172,7 @@ export function HandBuilder() {
           maxSelected={maxSelected}
           excludedIds={discardCardIds}
           compact
+          fill
         />
       ) : null}
 

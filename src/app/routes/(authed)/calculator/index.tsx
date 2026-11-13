@@ -6,6 +6,7 @@ import { DiscardPileDialog } from '@/components/calculator/discard-pile-dialog'
 import { HandBuilder } from '@/components/calculator/hand-builder'
 import { ScoreBreakdown } from '@/components/calculator/score-breakdown'
 import { ScoreBreakdownDialog } from '@/components/calculator/score-breakdown-dialog'
+import { FULL_HEIGHT_PAGE } from '@/components/layout/pageLayout'
 import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
 import { cardsQueryOptions, editionsQueryOptions } from '@/lib/cards/queries'
 import { scoreQueryOptions } from '@/lib/scoring/queries'
@@ -63,7 +64,7 @@ function CalculatorPage() {
   }, [clearHand])
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className={FULL_HEIGHT_PAGE}>
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-lg font-bold">{'Calculator'}</h1>
         <div className="flex items-center gap-2">
@@ -98,8 +99,8 @@ function CalculatorPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section>
+      <div className="flex flex-col flex-1 min-h-0 lg:grid lg:grid-cols-2 gap-6">
+        <section className="flex flex-col flex-1 min-h-0">
           <HandBuilder />
         </section>
 

@@ -5,6 +5,7 @@ import { useRef, useState } from 'react'
 import { DiscardPileDialog } from '@/components/calculator/discard-pile-dialog'
 import { ScoreBreakdown } from '@/components/calculator/score-breakdown'
 import { ScoreBreakdownDialog } from '@/components/calculator/score-breakdown-dialog'
+import { FULL_HEIGHT_PAGE } from '@/components/layout/pageLayout'
 import { PlayerHandForm } from '@/components/sessions/player-hand-form'
 import { CURSED_HOARD_SUITS_EDITION_SLUG } from '@/lib/calculator/actions'
 import type { TActionConfig } from '@/lib/calculator/actions'
@@ -113,7 +114,7 @@ function EditSessionPage() {
   }
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className={FULL_HEIGHT_PAGE}>
       <div className="flex items-center justify-between mb-2">
         <Link to="/sessions/$id" params={{ id }} className="btn btn-ghost btn-sm">
           {'<- '}
@@ -156,9 +157,9 @@ function EditSessionPage() {
         </button>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section>
-          <div className="flex gap-2 overflow-x-auto pb-1 mb-4 scrollbar-none">
+      <div className="flex flex-col flex-1 min-h-0 lg:grid lg:grid-cols-2 gap-6">
+        <section className="flex flex-col flex-1 min-h-0">
+          <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 mb-4 scrollbar-none">
             {session.players.map((player, i) => (
               <button
                 key={player.id}

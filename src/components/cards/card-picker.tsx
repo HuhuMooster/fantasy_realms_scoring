@@ -13,6 +13,8 @@ interface ICardPickerProps {
   maxSelected?: number
   compact?: boolean
   excludedIds?: string[]
+  // grow into the remaining height of a full-height page (mobile); desktop keeps the fixed cap
+  fill?: boolean
   listClassName?: string
 }
 
@@ -23,6 +25,7 @@ export function CardPicker({
   maxSelected,
   compact = false,
   excludedIds = [],
+  fill = false,
   listClassName,
 }: ICardPickerProps) {
   const [q, setQ] = useState('')
@@ -49,7 +52,7 @@ export function CardPicker({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className={cn('flex flex-col gap-1', fill && 'flex-1 min-h-0')}>
       <div className="flex gap-2 items-center">
         <Input
           placeholder="Search..."
@@ -78,7 +81,10 @@ export function CardPicker({
 
       <div
         className={cn(
-          'max-h-[44dvh] lg:max-h-[60dvh] overflow-y-auto',
+          fill
+            ? 'flex-1 min-h-32 lg:flex-none lg:max-h-[60dvh]'
+            : 'max-h-[44dvh] lg:max-h-[60dvh]',
+          'overflow-y-auto',
           compact
             ? 'flex flex-col gap-1'
             : 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2',
